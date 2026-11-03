@@ -5,19 +5,37 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Project program scheduler</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500&family=Public+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 </head>
 <body>
 <div id="dash-root">
-<div class="psp">
-<header>
+<div class="psp home">
+<section class="hero">
+<div class="heroText">
+<p class="eyebrow">Victorian Projects</p>
 <h1>Project program scheduler</h1>
-<p class="muted">Victorian Projects. </p>
-</header>
-<div class="landing"><a href="november.html"><b>November 2026</b><span class="muted">Calendar</span></a><a href="december.html"><b>December 2026</b><span class="muted">Calendar</span></a><a href="january.html"><b>January 2027</b><span class="muted">Calendar</span></a><a href="info.html"><b>More information</b><span class="muted">Hours, programs, crew and open items</span></a></div>
+<p>Who is on which job, and where every job is up to. <span id="todayDate"></span></p>
+</div>
+<svg class="heroFan" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="36" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3"/><g class="spinfan"><path d="M40 40L40 12M40 40L64 54M40 40L16 54" stroke="#12aef4" stroke-width="9" stroke-linecap="round"/></g><circle cx="40" cy="40" r="5" fill="#fff"/></svg>
+<div class="heroDuct" aria-hidden="true"><div class="heroWalk" id="heroWalk"></div><div class="ductline"></div></div>
+</section>
+
+<div class="landing">
+<a id="cardNov" href="november.html" style="--c:#0b4fd4"><span class="mcal"><b>NOV</b><i>26</i></span><strong>November 2026</strong><span class="muted cnt">Calendar</span><span class="dots"></span></a>
+<a id="cardDec" href="december.html" style="--c:#e8590c"><span class="mcal"><b>DEC</b><i>26</i></span><strong>December 2026</strong><span class="muted cnt">Calendar</span><span class="dots"></span></a>
+<a id="cardJan" href="january.html" style="--c:#2b9348"><span class="mcal"><b>JAN</b><i>27</i></span><strong>January 2027</strong><span class="muted cnt">Calendar</span><span class="dots"></span></a>
+<a href="info.html" style="--c:#7048e8"><span class="mcal info"><b>INFO</b><i>?</i></span><strong>More information</strong><span class="muted">Hours, programs, crew and open items</span></a>
+</div>
+
+<div class="homegrid">
+<section class="card"><h2>On the tools today</h2><div id="todayBoard" class="board">Loading…</div></section>
+<section class="card"><h2>Coming up</h2><ul id="comingUp" class="upnext"><li><span>Loading…</span></li></ul></section>
 </div>
 </div>
+</div>
+<script src="viz.js"></script>
+<script src="home.js"></script>
 </body>
 </html>

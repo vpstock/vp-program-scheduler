@@ -107,6 +107,22 @@
       '<g class="fan"><circle cx="' + (cx + 46) + '" cy="92" r="22" fill="#fff" stroke="#0a1a4d" stroke-width="2"/><path d="M' + (cx + 46) + ' 92L' + (cx + 46) + ' 72M' + (cx + 46) + ' 92L' + (cx + 63) + ' 102M' + (cx + 46) + ' 92L' + (cx + 29) + ' 102" stroke="#0b4fd4" stroke-width="5" stroke-linecap="round"/></g></g>'
   ];
 
+  const walkersSvg = (opts, W, px, pos) => {
+    let s = '';
+    const n = opts.walkers.length;
+    opts.walkers.forEach((name, i) => {
+      const off = (i - (n - 1) / 2) * 40;
+      const x = Math.min(W - 40, Math.max(X0 + 16, px + off));
+      s += '<g class="walker" data-x="' + x + '" style="transform:translate(' + (opts.reduce ? x : X0 + 16) + 'px,' + GY + 'px)">' +
+        '<g class="bob"><path class="leg l1" d="M-5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/><path class="leg l2" d="M5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/>' +
+        '<rect x="-11" y="-42" width="22" height="30" rx="7" fill="' + ((PEOPLE[name] || GENERIC).shirt) + '" stroke="#0a1a4d" stroke-width="1.6"/>' +
+        '<g transform="translate(-19,-78) scale(.95)">' + faceInner(name) + '</g></g>' +
+        (opts.noNames ? '' : '<text y="' + (i % 2 ? 50 : 38) + '" text-anchor="middle" class="wn">' + name + '</text>') + '</g>';
+    });
+    if (!n) s += '<g class="walker" data-x="' + Math.max(X0 + 16, px) + '" style="transform:translate(' + (opts.reduce ? Math.max(X0 + 16, px) : X0 + 16) + 'px,' + GY + 'px)"><g class="bob"><rect x="-11" y="-30" width="22" height="18" rx="6" fill="#adb5bd"/><path d="M-14 -34Q-14 -52 0 -52Q14 -52 14 -34Z" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/><rect x="-17" y="-36" width="34" height="5" rx="2.5" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/></g><text y="38" text-anchor="middle" class="wn">Crew not rostered</text></g>';
+    return s;
+  };
+
   window.buildTrack = function (host, opts) {
     // opts: {pos, walkers:[names], label, hours:[r,f,_,c], done, color, reduce}
     const W = X0 * 2 + ZW * 4, pos = Math.min(4, Math.max(0, opts.pos));
@@ -131,20 +147,12 @@
     // handover flag
     s += '<g transform="translate(' + (W - 20) + ',' + (GY - 88) + ')"><path d="M0 0V88" stroke="#0a1a4d" stroke-width="3"/><path class="flag" d="M0 2H34L26 14L34 26H0Z" fill="' + (pos >= 4 ? '#2b9348' : '#adb5bd') + '"/></g>';
     s += '<text x="' + (W - 20) + '" y="' + (GY + 38) + '" text-anchor="end" class="zl">Handover</text>';
-    // walkers
-    const n = opts.walkers.length;
-    opts.walkers.forEach((name, i) => {
-      const off = (i - (n - 1) / 2) * 40;
-      const x = Math.min(W - 40, Math.max(X0 + 16, px(pos) + off));
-      s += '<g class="walker" data-x="' + x + '" style="transform:translate(' + (opts.reduce ? x : X0 + 16) + 'px,' + GY + 'px)">' +
-        '<g class="bob"><path class="leg l1" d="M-5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/><path class="leg l2" d="M5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/>' +
-        '<rect x="-11" y="-42" width="22" height="30" rx="7" fill="' + ((PEOPLE[name] || GENERIC).shirt) + '" stroke="#0a1a4d" stroke-width="1.6"/>' +
-        '<g transform="translate(-19,-78) scale(.95)">' + faceInner(name) + '</g></g>' +
-        '<text y="' + (i % 2 ? 50 : 38) + '" text-anchor="middle" class="wn">' + name + '</text></g>';
-    });
-    if (!n) s += '<g class="walker" data-x="' + Math.max(X0 + 16, px(pos)) + '" style="transform:translate(' + (opts.reduce ? Math.max(X0 + 16, px(pos)) : X0 + 16) + 'px,' + GY + 'px)"><g class="bob"><rect x="-11" y="-30" width="22" height="18" rx="6" fill="#adb5bd"/><path d="M-14 -34Q-14 -52 0 -52Q14 -52 14 -34Z" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/><rect x="-17" y="-36" width="34" height="5" rx="2.5" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/></g><text y="38" text-anchor="middle" class="wn">Crew not rostered</text></g>';
+    s += walkersSvg(opts, W, px(pos), pos);
     s += '</svg>';
     host.innerHTML = s;
+    animate(host, opts);
+  };
+  const animate = (host, opts) => {
     if (!opts.reduce) {
       const ws = host.querySelectorAll('.walker');
       requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -153,5 +161,49 @@
         setTimeout(() => ws.forEach((w) => w.classList.remove('walking')), 2200);
       }));
     }
+  };
+
+  window.buildFireTrack = function (host, o) {
+    // o: {bays, days, dayNo, walkers, color, reduce, aria, unit}
+    const W = X0 * 2 + ZW * 4, n = Math.max(1, o.bays || 2), days = Math.max(1, o.days), d = Math.min(days, Math.max(0, o.dayNo));
+    const bw = Math.min(170, (W - 2 * X0 - (n - 1) * 16) / n), gap = n > 1 ? (W - 2 * X0 - n * bw) / (n - 1) : 0;
+    const start = n > 1 ? X0 : X0 + (W - 2 * X0 - bw) / 2;
+    let s = '<svg class="track" viewBox="0 0 ' + W + ' 215" role="img" aria-label="' + (o.aria || 'Fire station progress') + '">' +
+      '<defs><pattern id="bp2" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
+      '<rect width="' + W + '" height="215" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="215" rx="10" fill="url(#bp2)"/>' +
+      '<path d="M' + (X0 - 6) + ' 52L' + (W / 2) + ' 14L' + (W - X0 + 6) + ' 52Z" fill="#c92a2a" stroke="#0a1a4d" stroke-width="2.5"/>' +
+      '<rect x="' + X0 + '" y="52" width="' + (W - 2 * X0) + '" height="98" fill="#f1e4d4" stroke="#0a1a4d" stroke-width="2.5"/>' +
+      '<text x="' + (W / 2) + '" y="44" text-anchor="middle" class="zl" style="fill:#fff">Fire station · ' + n + (n === 1 ? ' bay' : ' bays') + ' · ' + days + (days === 1 ? ' day' : ' days') + '</text>';
+    for (let i = 0; i < n; i++) {
+      const x = start + i * (bw + gap), doneB = d >= (i + 1) * days / n, curB = !doneB && d > i * days / n;
+      const up = doneB ? 66 : curB ? 38 : 0;
+      s += '<rect x="' + (x + 6) + '" y="62" width="' + (bw - 12) + '" height="88" fill="#cfe3f7" stroke="#0a1a4d" stroke-width="2"/>';
+      // Fantech extraction arm: hose from the ceiling to the exhaust pipe
+      const cx = x + bw / 2;
+      s += '<g class="art' + (doneB || curB ? '' : ' dimart') + '"><path d="M' + (cx - 24) + ' 62V84Q' + (cx - 24) + ' 108 ' + (cx + 4) + ' 112" stroke="#c8641c" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+        '<rect x="' + (cx + 2) + '" y="104" width="22" height="16" rx="3" fill="#0a1a4d"/>' +
+        '<g class="air"><path d="M' + (cx + 30) + ' 108q6 6 0 12M' + (cx + 40) + ' 108q6 6 0 12" stroke="#12aef4" stroke-width="2.5" fill="none" stroke-linecap="round"/></g></g>';
+      const sh = 88 - up;
+      s += '<g class="shutter">' + (sh > 0 ? '<rect x="' + (x + 6) + '" y="62" width="' + (bw - 12) + '" height="' + sh + '" fill="#dfe6f1" stroke="#0a1a4d" stroke-width="2"/>' : '') +
+        '<path d="M' + (x + 6) + ' ' + (62 + sh) + 'H' + (x + bw - 6) + '" stroke="#0a1a4d" stroke-width="4"/>';
+      for (let k = 1; k < 7; k++) { const yy = 62 + k * 12.5; if (yy < 62 + sh - 2) s += '<path d="M' + (x + 6) + ' ' + yy + 'H' + (x + bw - 6) + '" stroke="#8a97ab" stroke-width="1.5"/>'; }
+      s += '</g>';
+      s += '<text x="' + cx + '" y="' + 168 + '" text-anchor="middle" class="zl" style="font-size:11px">Bay ' + (i + 1) + (doneB ? ' done' : curB ? ' in progress' : '') + '</text>';
+      if (doneB) s += '<g transform="translate(' + (x + bw - 26) + ',66)"><circle r="9" cx="0" cy="8" fill="#2b9348"/><path d="M-4 8L-1 11L5 4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
+    }
+    // day blocks on the ground: one block per working day
+    const sw = (W - 2 * X0) / days, gy = 178;
+    for (let k = 0; k < days; k++) {
+      const filled = k + 1 <= Math.floor(d), part = !filled && k < d;
+      s += '<rect x="' + (X0 + k * sw + 1) + '" y="' + gy + '" width="' + (sw - 2) + '" height="16" rx="3" fill="#dfe6f1" stroke="#0a1a4d" stroke-width="1.5"/>';
+      if (filled || part) s += '<rect x="' + (X0 + k * sw + 1) + '" y="' + gy + '" width="' + ((sw - 2) * (filled ? 1 : d - k)) + '" height="16" rx="3" fill="' + o.color + '"/>';
+      s += '<text x="' + (X0 + k * sw + sw / 2) + '" y="' + (gy + 12) + '" text-anchor="middle" class="wn" style="stroke:none;font-size:9px;fill:' + (filled ? '#fff' : '#0a1a4d') + '">' + (k + 1) + '</text>';
+    }
+    s += '<text x="' + (W - X0) + '" y="210" text-anchor="end" class="zl" style="font-size:11px">' + (o.unit || 'Day') + ' ' + Math.min(days, Math.max(0, Math.ceil(d))) + ' of ' + days + '</text>';
+    const px = X0 + (d / days) * (W - 2 * X0);
+    s += walkersSvg(Object.assign({}, o, { noNames: true }), W, px, 0).replace(/transform:translate\(([\d.]+)px,150px\)/g, 'transform:translate($1px,150px)');
+    s += '</svg>';
+    host.innerHTML = s;
+    animate(host, o);
   };
 })();

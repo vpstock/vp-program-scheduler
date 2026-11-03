@@ -340,8 +340,25 @@ dash.draw('calendar', (el) => {
         else cr.appendChild(mk('span', 'muted', 'No crew named on the roster for this job.'));
         det.appendChild(cr);
         const th = mk('div', 'trackwrap'); det.appendChild(th);
-        buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches, aria: ui.sel + ' schedule position' });
-        det.appendChild(mk('span', 'muted', 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.'));
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
+        if (isFire) {
+          // Fire stations: no rough-in, fit-off or commissioning. Progress is by bay and by day.
+          const code = (String(ui.sel).match(/^FS\d+/i) || [''])[0].toUpperCase();
+          const fr = (ok('fantech') || []).find((x) => x.station === code);
+          const bays = fr ? +fr.bays : 2;
+          const BAYDAYS = { 1: 3, 2: 5, 3: 7, 4: 9, 5: 11, 6: 13 };
+          const hasFt = ents.some((r) => r.kind === 'fantech');
+          const s0 = new Date(Math.min(...ents.map((r) => +r.s))), e0 = new Date(Math.max(...ents.map((r) => +r.e)));
+          const rosterDays = (() => { let n = 0; ents.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) n++; }); return n; })();
+          const days = hasFt ? (BAYDAYS[bays] || rosterDays) : rosterDays;
+          let done = 0;
+          if (today0 > s0) { const upto = new Date(Math.min(+today0 - 86400000, +e0)); ents.forEach((r) => { for (let x = new Date(r.s); x <= r.e && x <= upto; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) done++; }); }
+          const todayWork = ents.some((r) => r.s <= today0 && today0 <= r.e) && isWork(today0);
+          buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
+        } else
+        buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
+        det.appendChild(mk('span', 'muted', 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.' + (/^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by bay and by day, with no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
       }
