@@ -342,6 +342,15 @@ dash.draw('calendar', (el) => {
         const th = mk('div', 'trackwrap'); det.appendChild(th);
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
+        const isLC = /459 Little Collins/i.test(ui.sel);
+        if (isLC) {
+          // 459 Little Collins St: Levels 3, 4, 8, 9, 10 and 11, then commissioning
+          const ms = (ok('milestones') || []).filter((x) => /459/i.test(x.job));
+          const status = {}; ms.forEach((x) => { status[String(x.milestone).trim()] = x.status; });
+          const comm = status['Commissioning'] || '';
+          buildLevelsTrack(th, { levels: [3, 4, 8, 9, 10, 11], status, commissioning: comm, walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' progress by level' });
+          if (!ms.length) det.appendChild(mk('span', 'muted', 'No level progress has been recorded yet, so the crew start at Level 3. Progress is added from Matt B\'s site posts.'));
+        } else
         if (isFire) {
           // Fire stations: no rough-in, fit-off or commissioning. Progress is by bay and by day.
           const code = (String(ui.sel).match(/^FS\d+/i) || [''])[0].toUpperCase();
@@ -358,7 +367,7 @@ dash.draw('calendar', (el) => {
           buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
         } else
         buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
-        det.appendChild(mk('span', 'muted', 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.' + (/^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by bay and by day, with no rough-in, fit-off or commissioning.' : '')));
+        det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by bay and by day, with no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
       }
@@ -381,4 +390,4 @@ dash.draw('calendar', (el) => {
   render();
 });
 
-dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov']);
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones']);
