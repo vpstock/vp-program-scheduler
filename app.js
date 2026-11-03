@@ -368,7 +368,7 @@ dash.draw('calendar', (el) => {
         const hr = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
         if (hr) {
           const u = +hr.used_h, e = +hr.est_h, pc = Math.round(u / e * 100);
-          det.appendChild(mk('span', 'muted', 'Hours from Simpro (' + hr.simpro_ref + ', ' + hr.as_of + '): ' + u + ' of ' + e + ' h used (' + pc + '%), ' + Math.max(0, e - u) + ' h left.'));
+          det.appendChild(mk('span', 'muted', 'Hours worked to date from Simpro (' + hr.simpro_ref + ', as at ' + hr.as_of + '). Booked hours only, future scheduled time not counted: ' + u + ' of ' + e + ' h used (' + pc + '%), ' + Math.max(0, e - u) + ' h left.'));
           const hb = mk('div', 'daybar'); const hf = document.createElement('i'); hf.style.width = Math.min(100, pc) + '%'; hf.style.background = pc > 100 ? '#e03131' : '#2b9348'; hb.appendChild(hf); det.appendChild(hb);
         }
         if (/IGA/i.test(ui.sel)) {
