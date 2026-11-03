@@ -89,3 +89,10 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .landing a{display:flex;flex-direction:column;gap:4px;padding:var(--cds-pad-lg);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-panel);color:var(--color-fg);text-decoration:none}
 .psp .landing a:hover{border-color:#0b4fd4}
 .psp .landing b{font-family:var(--font-anthropic-serif);font-weight:500;font-size:var(--cds-font-size-heading)}
+
+.psp details.jobinfo{border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-panel)}
+.psp details.jobinfo>summary{cursor:pointer;list-style:none;padding:var(--cds-pad-md) var(--cds-pad-lg);font-weight:var(--cds-font-weight-medium);display:flex;justify-content:space-between;align-items:center}
+.psp details.jobinfo>summary::-webkit-details-marker{display:none}
+.psp details.jobinfo>summary::after{content:"\25BE";color:var(--color-fg-muted)}
+.psp details.jobinfo[open]>summary::after{content:"\25B4"}
+.psp details.jobinfo>*:not(summary){margin:0 var(--cds-pad-lg) var(--cds-pad-lg)}

@@ -282,7 +282,11 @@ dash.draw('calendar', (el) => {
     } else {
       det.appendChild(mk('span', 'muted', 'Click a box in the calendar, or a row below, to see the detail and every date for that job.'));
     }
-    body.appendChild(det);
+    const jd = mk('details', 'jobinfo');
+    jd.appendChild(mk('summary', '', 'Job information'));
+    jd.appendChild(det);
+    jd.open = !!ui.jobOpen || picked !== null;
+    jd.addEventListener('toggle', () => { ui.jobOpen = jd.open; });
 
     // Agenda
     const sc = mk('div', 'scroll');
@@ -298,7 +302,7 @@ dash.draw('calendar', (el) => {
       tbody.appendChild(tr);
     });
     if (!mItems.length) { const tr = mk('tr'); const td = mk('td', '', 'Nothing matches these filters for this month.'); td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr); }
-    tb.appendChild(tbody); sc.appendChild(tb); body.appendChild(sc);
+    tb.appendChild(tbody); sc.appendChild(tb); jd.appendChild(sc); body.appendChild(jd);
   }
   render();
 });
