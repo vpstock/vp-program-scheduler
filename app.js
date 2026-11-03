@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103s. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103t. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -748,6 +748,12 @@ dash.draw('calendar', (el) => {
         if (isSmall) {
           // Small job: no rough-in, fit-off or commissioning stages. Just rostered days and the Simpro hours.
           th.remove();
+          if (isCondRep) {
+            const stp = [{ label: 'Condition report', status: (jobMs.find((x) => /^task:\s*condition report/i.test(x.milestone)) || {}).status || '' }, { label: 'Airflow testing', status: (jobMs.find((x) => /^task:\s*airflow testing/i.test(x.milestone)) || {}).status || '' }];
+            det.appendChild(mk('span', 'muted', 'Airflow test progress'));
+            const aw = mk('div', 'trackwrap'); det.appendChild(aw);
+            buildAirflowTrack(aw, { steps: stp, walkers: crewOf({ label: 'Urv', note: '' }), color: jobColor(ui.sel), reduce, aria: ui.sel + ' airflow test progress' });
+          }
           const rs = ents.filter((r) => r.kind !== 'program');
           let tot = 0, dn = 0;
           rs.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x) || isoD(r.s) === isoD(r.e)) { tot++; if (x < today0) dn++; } });

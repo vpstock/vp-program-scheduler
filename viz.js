@@ -240,6 +240,63 @@
     }
   };
 
+
+  // Kitchen exhaust airflow test scene: hood and filters, scrubber, duct with a test port, then the fan and gauge.
+  // o: {steps:[{label,status}] (condition report, airflow testing), walkers, color, reduce, aria}
+  window.buildAirflowTrack = function (host, o) {
+    const W = X0 * 2 + ZW * 4, st = o.steps || [], n = Math.max(1, st.length);
+    const dn = st.filter((x) => /done/i.test(x.status)).length, dg = st.filter((x) => /doing|part/i.test(x.status)).length;
+    const frac = (dn + dg * .5) / n, pos = frac * 4;
+    const px = (p) => X0 + p * ZW;
+    const stk = '#0a1a4d';
+    let s = '<svg class="track" viewBox="0 0 ' + W + ' 215" role="img" aria-label="' + (o.aria || 'Airflow test progress') + '">' +
+      '<defs><pattern id="bpa" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
+      '<rect width="' + W + '" height="215" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="215" rx="10" fill="url(#bpa)"/>';
+    const half = (i) => (i < dn ? 'done' : (i === dn && dg ? 'cur' : 'todo'));
+    // headings over each pair of zones
+    st.slice(0, 2).forEach((x, i) => {
+      const d = /done/i.test(x.status);
+      s += '<text x="' + (X0 + i * 2 * ZW + ZW) + '" y="30" text-anchor="middle" class="zl">' + (i + 1) + '. ' + x.label + '</text>';
+      if (d) s += '<g transform="translate(' + (X0 + (i + 1) * 2 * ZW - 26) + ',16)"><circle r="9" cx="0" cy="8" fill="#2b9348"/><path d="M-4 8L-1 11L5 4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
+    });
+    const op = (i) => (half(Math.floor(i / 2)) === 'todo' ? .55 : 1);
+    // zone 1: kitchen hood with mesh filters
+    let x = X0 + ZW / 2;
+    s += '<g opacity="' + op(0) + '"><path d="M' + (x - 60) + ' 100L' + (x - 40) + ' 62H' + (x + 40) + 'L' + (x + 60) + ' 100Z" fill="#cfd6e4" stroke="' + stk + '" stroke-width="2.5"/>' +
+      '<path d="M' + (x - 46) + ' 94H' + (x + 46) + 'M' + (x - 36) + ' 86H' + (x + 36) + 'M' + (x - 26) + ' 78H' + (x + 26) + '" stroke="#6b7688" stroke-width="2"/>' +
+      '<rect x="' + (x - 14) + '" y="46" width="28" height="16" fill="#cfd6e4" stroke="' + stk + '" stroke-width="2.5"/></g>';
+    // zone 2: scrubber box with water spray
+    x = X0 + ZW * 1.5;
+    s += '<g opacity="' + op(1) + '"><rect x="' + (x - 56) + '" y="64" width="112" height="46" rx="4" fill="#e2e8f2" stroke="' + stk + '" stroke-width="2.5"/>' +
+      '<path d="M' + (x - 36) + ' 74V102M' + (x - 18) + ' 74V102M' + (x) + ' 74V102M' + (x + 18) + ' 74V102" stroke="#8a97ab" stroke-width="2.5"/>' +
+      '<path d="M' + (x - 30) + ' 112q-4 8 0 14M' + (x) + ' 112q-4 8 0 14M' + (x + 30) + ' 112q-4 8 0 14" stroke="#12aef4" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>';
+    // zone 3: duct run with a test port and probe
+    x = X0 + ZW * 2.5;
+    s += '<g opacity="' + op(2) + '"><rect x="' + (x - 90) + '" y="70" width="180" height="30" fill="#cfd6e4" stroke="' + stk + '" stroke-width="2.5"/>' +
+      '<path d="M' + (x - 60) + ' 70V100M' + (x + 60) + ' 70V100" stroke="#8a97ab" stroke-width="2"/>' +
+      '<circle cx="' + x + '" cy="70" r="5" fill="#fff" stroke="' + stk + '" stroke-width="2"/><path d="M' + x + ' 65V40" stroke="' + stk + '" stroke-width="3" stroke-linecap="round"/><rect x="' + (x - 12) + '" y="30" width="24" height="12" rx="3" fill="#ffd43b" stroke="' + stk + '" stroke-width="2"/></g>';
+    // zone 4: fan with gauge
+    x = X0 + ZW * 3.5;
+    s += '<g opacity="' + op(3) + '"><circle cx="' + (x - 34) + '" cy="88" r="30" fill="#e2e8f2" stroke="' + stk + '" stroke-width="2.5"/>' +
+      '<path d="M' + (x - 34) + ' 88L' + (x - 34) + ' 62M' + (x - 34) + ' 88L' + (x - 12) + ' 100M' + (x - 34) + ' 88L' + (x - 56) + ' 100" stroke="' + stk + '" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="' + (x + 38) + '" cy="82" r="24" fill="#fff" stroke="' + stk + '" stroke-width="2.5"/><path d="M' + (x + 20) + ' 90Q' + (x + 38) + ' 56 ' + (x + 56) + ' 90" fill="none" stroke="#6b7688" stroke-width="2"/><path d="M' + (x + 38) + ' 82L' + (x + 50) + ' 70" stroke="#c92a2a" stroke-width="3" stroke-linecap="round"/></g>';
+    // air flow arrows along the way
+    s += '<g stroke="#12aef4" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".8">';
+    for (let k = 0; k < 8; k++) { const ax = X0 + 40 + k * 100; s += '<path d="M' + ax + ' 128h22l-6-5m6 5l-6 5"/>'; }
+    s += '</g>';
+    // platform
+    const GYa = 150;
+    s += '<rect x="' + X0 + '" y="' + GYa + '" width="' + ZW * 4 + '" height="22" rx="3" fill="#dfe6f1" stroke="' + stk + '" stroke-width="2"/>';
+    for (let i = 1; i < 8; i++) s += '<path d="M' + (X0 + i * 100) + ' ' + GYa + 'V' + (GYa + 22) + '" stroke="#8a97ab" stroke-width="2"/>';
+    s += '<clipPath id="pca"><rect x="' + X0 + '" y="' + GYa + '" width="' + (px(pos) - X0) + '" height="22"/></clipPath><rect x="' + X0 + '" y="' + GYa + '" width="' + ZW * 4 + '" height="22" rx="3" fill="' + o.color + '" clip-path="url(#pca)"/>' +
+      '<rect x="' + X0 + '" y="' + GYa + '" width="' + ZW * 4 + '" height="22" rx="3" fill="none" stroke="' + stk + '" stroke-width="2"/>' +
+      '<text x="' + (W - X0) + '" y="' + (GYa + 40) + '" text-anchor="end" class="zl">' + dn + ' of ' + n + ' steps done</text>';
+    s += walkersSvg(Object.assign({}, o, { walkers: o.walkers && o.walkers.length ? o.walkers : [], gy: GYa }), W, px(Math.max(.2, pos)), pos);
+    s += '</svg>';
+    host.innerHTML = s;
+    animate(host, o);
+  };
+
   window.buildFireTrack = function (host, o) {
     // o: {bays, days, dayNo, walkers, color, reduce, aria, unit}
     const W = X0 * 2 + ZW * 4, n = Math.max(1, o.bays || 2), days = Math.max(1, o.days), d = Math.min(days, Math.max(0, o.dayNo));
