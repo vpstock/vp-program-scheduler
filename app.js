@@ -200,11 +200,12 @@ dash.draw('calendar', (el) => {
 
     // Filters
     const fl = mk('div', 'filters');
-    Object.entries(KIND).forEach(([k, v]) => {
+    Object.entries(KIND).filter(([k]) => items.some((r) => r.kind === k)).forEach(([k, v]) => {
       const b = mk('button', 'fbtn', v.name); b.type = 'button';
       b.style.setProperty('--k', v.c);
-      b.setAttribute('aria-pressed', String(ui.kinds.has(k)));
-      b.onclick = () => { ui.kinds.has(k) ? ui.kinds.delete(k) : ui.kinds.add(k); ui.sel = null; render(); };
+      b.setAttribute('aria-pressed', String(ui.kinds.has(k) && ui.kinds.size < Object.keys(KIND).length));
+      b.classList.toggle('dim', ui.kinds.size < Object.keys(KIND).length && !ui.kinds.has(k));
+      b.onclick = () => { const only = ui.kinds.size === 1 && ui.kinds.has(k); ui.kinds = only ? new Set(Object.keys(KIND)) : new Set([k]); ui.sel = null; render(); };
       fl.appendChild(b);
     });
     const sel = mk('select'); sel.setAttribute('aria-label', 'Filter by job');
@@ -226,7 +227,7 @@ dash.draw('calendar', (el) => {
     const kp = mk('div', 'kpis');
     [['Jobs on the calendar', new Set(mItems.filter((r) => r.kind !== 'claim').map((r) => r.base)).size],
      ['Fire station days', fsDays],
-     ['Proposed entries', mItems.filter((r) => r.kind === 'proposed').length],
+     ['Crew roster entries', mItems.filter((r) => r.kind === 'roster').length],
      ['Progress claim days', mItems.filter((r) => r.kind === 'claim').length]].forEach(([l, v]) => {
       const k = mk('div', 'kpi'); k.append(mk('span', 'muted', l), mk('b', '', String(v))); kp.appendChild(k);
     });
