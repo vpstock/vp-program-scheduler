@@ -78,11 +78,18 @@
       : (o.up ? '' : '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>');
     const drink = '<path d="M11 -39L21 -37L25 -47" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="25.5" cy="-48" r="3.6" fill="' + sk + '"/>' +
       '<rect x="22" y="-64" width="10" height="15" rx="2" fill="#f5b301" stroke="#14181e" stroke-width="1.2"/><rect x="22" y="-67" width="10" height="5" rx="2.5" fill="#fff" stroke="#14181e" stroke-width="1"/><path d="M24.5 -60V-52M29.5 -60V-52" stroke="#fff" stroke-width="1" opacity=".6"/>';
-    const palm = (x) => '<rect x="' + x + '" y="-42" width="7.5" height="13" rx="3.2" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".9"/><path d="M' + (x + 2.4) + ' -39V-32" stroke="#0a1a4d" stroke-width=".5" opacity=".35"/>';
+    const hand = (m) => '<g transform="translate(' + (m * 8) + ',-30) rotate(' + (-m * 18) + ') scale(' + m + ',1)">' +
+      '<rect x="-5.2" y="-9" width="10.4" height="9.5" rx="3.2" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".7"/>' +
+      '<rect x="-4.9" y="-16.5" width="2.5" height="9" rx="1.25" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".6"/>' +
+      '<rect x="-2.2" y="-18" width="2.5" height="10.5" rx="1.25" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".6"/>' +
+      '<rect x="0.5" y="-18" width="2.5" height="10.5" rx="1.25" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".6"/>' +
+      '<rect x="3.1" y="-16" width="2.4" height="9" rx="1.2" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".6"/>' +
+      '<rect x="5" y="-9" width="3" height="7.5" rx="1.5" transform="rotate(-28 5 -3)" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".6"/>' +
+      '<path d="M-3 -5.5Q0 -3.5 3.5 -5.5" stroke="#0a1a4d" stroke-width=".5" fill="none" opacity=".4"/></g>';
     const rightArm = o.clap
-      ? '<g class="cl-l"><path d="M-11 -41L-19 -33L-6 -34" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' + palm(-7.5) + '</g>' +
-        '<g class="cl-r"><path d="M11 -41L19 -33L6 -34" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' + palm(0) + '</g>' +
-        '<path class="clfx" d="M-12 -44L-16 -48M0 -44V-50M12 -44L16 -48" stroke="#f08c00" stroke-width="1.8" stroke-linecap="round"/>'
+      ? '<g class="cl-l"><path d="M-11 -41L-19 -30L-9 -29" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' + hand(-1) + '</g>' +
+        '<g class="cl-r"><path d="M11 -41L19 -30L9 -29" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' + hand(1) + '</g>' +
+        '<path class="clfx" d="M-6 -50L-9 -56M0 -52V-59M6 -50L9 -56" stroke="#f08c00" stroke-width="1.8" stroke-linecap="round"/>'
       : o.drink ? drink
       : (o.up ? '<path d="M-11 -41L-20 -62L-18 -82M11 -41L20 -62L18 -82" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-18" cy="-85" r="3.6" fill="' + sk + '"/><circle cx="18" cy="-85" r="3.6" fill="' + sk + '"/>' : '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>');
     return '<g class="figure">' +
