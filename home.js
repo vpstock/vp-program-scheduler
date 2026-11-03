@@ -10,7 +10,7 @@
   // Hero: crew walking along a duct, fan spinning at the end
   const walk = document.getElementById('heroWalk');
   if (walk) {
-    walk.innerHTML = CREW.map((n, i) => '<span class="hw" style="animation-delay:' + (-i * 3.2) + 's">' + faceSVG(n, 44) + '</span>').join('');
+    walk.innerHTML = CREW.map((n, i) => '<span class="hw" style="animation-delay:' + (-i * 3.2) + 's">' + figSVG(n, 84) + '</span>').join('');
   }
 
   const today = new Date(); today.setHours(0, 0, 0, 0);

@@ -36,6 +36,32 @@
     p.hair + '</g><circle cx="20" cy="20" r="19.4" fill="none" stroke="#0a1a4d" stroke-opacity=".35"/>';
   window.faceInner = (name) => inner(PEOPLE[name] || GENERIC);
   window.faceSVG = (name, px) => '<svg class="face" viewBox="0 0 40 40" width="' + px + '" height="' + px + '" role="img" aria-label="' + name + '">' + faceInner(name) + '</svg>';
+
+  const TOOLS = {
+    Urv: '<rect x="19" y="-35" width="17" height="9" rx="2.5" fill="#f08c00" stroke="#14181e" stroke-width="1"/><rect x="22" y="-28" width="5.5" height="11" rx="1.5" fill="#14181e"/><path d="M36 -30.5H42" stroke="#adb5bd" stroke-width="2.4" stroke-linecap="round"/>',
+    Kei: '<rect x="18" y="-43" width="15" height="20" rx="2" fill="#14181e" stroke="#adb5bd" stroke-width="1"/><rect x="20" y="-41" width="11" height="15" rx="1" fill="#9fdcff"/><path d="M22 -37H29M22 -33H29M22 -29H27" stroke="#0a4fd4" stroke-width="1.2"/>',
+    Dan: '<path d="M21 -25L34 -45" stroke="#868e96" stroke-width="3.4" stroke-linecap="round"/><circle cx="35" cy="-47" r="5.5" fill="none" stroke="#868e96" stroke-width="3.4"/><path d="M33 -52L38 -45" stroke="#e9ecef" stroke-width="3"/>',
+    Tandy: '<circle cx="25" cy="-23" r="7.5" fill="#fab005" stroke="#14181e" stroke-width="1.2"/><circle cx="25" cy="-23" r="2.6" fill="#14181e"/><path d="M31 -20H38" stroke="#14181e" stroke-width="2" stroke-linecap="round"/><rect x="36" y="-23" width="4" height="6" rx="1" fill="#14181e"/>',
+    'Matt B': '<rect x="19" y="-37" width="14" height="18" rx="2.5" fill="#f76707" stroke="#14181e" stroke-width="1"/><rect x="21" y="-35" width="10" height="6" rx="1" fill="#d3f9d8"/><circle cx="26" cy="-23" r="3" fill="#14181e"/><path d="M26 -37V-44" stroke="#14181e" stroke-width="2"/>'
+  };
+  const GENERIC_TOOL = '<rect x="19" y="-30" width="12" height="8" rx="2" fill="#868e96"/>';
+  // Whole figure: boots at y 0, head about 80 up. Left arm swings, right hand holds the tool.
+  window.figInner = (name) => {
+    const p = PEOPLE[name] || GENERIC, sk = p.skin, sh = p.shirt;
+    const hv = sh === '#f59f00' || sh === '#f76707';
+    return '<g class="figure">' +
+      '<g class="leg l1"><path d="M-5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-10" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
+      '<g class="leg l2"><path d="M5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-0.5" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
+      '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>' +
+      '<rect x="-12.5" y="-46" width="25" height="31" rx="8" fill="' + sh + '" stroke="#0a1a4d" stroke-width="1.4"/>' +
+      (hv ? '<path d="M-12 -30H12M-12 -24H12" stroke="#e9ecef" stroke-width="2.2"/>' : '<rect x="-12.5" y="-20" width="25" height="5" rx="2" fill="#0a1a4d" fill-opacity=".25"/>') +
+      '<rect x="-12.5" y="-17" width="25" height="4" fill="#0a1a4d" fill-opacity=".35"/>' +
+      '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>' +
+      '<rect x="-3.5" y="-50" width="7" height="6" fill="' + sk + '"/>' +
+      '<g transform="translate(-20,-88) scale(1)">' + faceInner(name) + '</g>' +
+      '</g>';
+  };
+  window.figSVG = (name, h) => '<svg class="fig" viewBox="-26 -90 70 92" height="' + h + '" width="' + Math.round(h * 70 / 92) + '" role="img" aria-label="' + name + '">' + figInner(name) + '</svg>';
   window.crewOf = (r) => {
     const t = (r.label || '') + ' ' + (r.note || '');
     const out = [];
@@ -111,12 +137,10 @@
     let s = '';
     const n = opts.walkers.length;
     opts.walkers.forEach((name, i) => {
-      const off = (i - (n - 1) / 2) * 40;
+      const off = (i - (n - 1) / 2) * 48;
       const x = Math.min(W - 40, Math.max(X0 + 16, px + off));
       s += '<g class="walker" data-x="' + x + '" style="transform:translate(' + (opts.reduce ? x : X0 + 16) + 'px,' + (opts.gy || GY) + 'px)">' +
-        '<g class="bob"><path class="leg l1" d="M-5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/><path class="leg l2" d="M5 -14V0" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/>' +
-        '<rect x="-11" y="-42" width="22" height="30" rx="7" fill="' + ((PEOPLE[name] || GENERIC).shirt) + '" stroke="#0a1a4d" stroke-width="1.6"/>' +
-        '<g transform="translate(-19,-78) scale(.95)">' + faceInner(name) + '</g></g>' +
+        '<g class="bob">' + figInner(name) + '</g>' +
         (opts.noNames ? '' : '<text y="' + (i % 2 ? 50 : 38) + '" text-anchor="middle" class="wn">' + name + '</text>') + '</g>';
     });
     if (!n) s += '<g class="walker" data-x="' + Math.max(X0 + 16, px) + '" style="transform:translate(' + (opts.reduce ? Math.max(X0 + 16, px) : X0 + 16) + 'px,' + (opts.gy || GY) + 'px)"><g class="bob"><rect x="-11" y="-30" width="22" height="18" rx="6" fill="#adb5bd"/><path d="M-14 -34Q-14 -52 0 -52Q14 -52 14 -34Z" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/><rect x="-17" y="-36" width="34" height="5" rx="2.5" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/></g><text y="38" text-anchor="middle" class="wn">Crew not rostered</text></g>';
