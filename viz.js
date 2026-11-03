@@ -57,17 +57,18 @@
   };
   const GENERIC_TOOL = '<rect x="19" y="-30" width="12" height="8" rx="2" fill="#868e96"/>';
   // Whole figure: boots at y 0, head about 80 up. Left arm swings, right hand holds the tool.
-  window.figInner = (name) => {
+  window.figInner = (name, o) => {
+    o = o || {};
     const p = PEOPLE[name] || GENERIC, sk = p.skin, sh = p.shirt;
     const hv = sh === '#f59f00' || sh === '#f76707';
     return '<g class="figure">' +
       '<g class="leg l1"><path d="M-5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-10" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
       '<g class="leg l2"><path d="M5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-0.5" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
-      '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>' +
+      (o.up ? '' : '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>' ) +
       '<rect x="-12.5" y="-46" width="25" height="31" rx="8" fill="' + sh + '" stroke="#0a1a4d" stroke-width="1.4"/>' +
       (hv ? '<path d="M-12 -30H12M-12 -24H12" stroke="#e9ecef" stroke-width="2.2"/>' : '<rect x="-12.5" y="-20" width="25" height="5" rx="2" fill="#0a1a4d" fill-opacity=".25"/>') +
       '<rect x="-12.5" y="-17" width="25" height="4" fill="#0a1a4d" fill-opacity=".35"/>' +
-      '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>' +
+      (o.up ? '<path d="M-11 -41L-20 -62L-18 -82M11 -41L20 -62L18 -82" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-18" cy="-85" r="3.6" fill="' + sk + '"/><circle cx="18" cy="-85" r="3.6" fill="' + sk + '"/>' : '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>') +
       '<rect x="-4" y="-51" width="8" height="8" rx="2" fill="' + sk + '"/><rect x="-4" y="-47" width="8" height="2" fill="#000" opacity=".12"/>' +
       '<g transform="translate(-22,-80) scale(1.1)">' + headInner(name) + '</g>' +
       '</g>';

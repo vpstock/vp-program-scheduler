@@ -13,6 +13,10 @@
     walk.innerHTML = CREW.map((n, i) => '<span class="hw" style="--d:' + (-i * 4.4) + 's">' + figSVG(n, 84) + '</span>').join('');
   }
 
+  // Two on ladders lifting a duct section up to the hangers
+  const f1 = document.getElementById('sceneF1'), f2 = document.getElementById('sceneF2');
+  if (f1 && f2) { f1.innerHTML = figInner('Dan', { up: true }); f2.innerHTML = figInner('Tandy', { up: true }); }
+
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tEl = document.getElementById('todayDate');
   if (tEl) tEl.textContent = d3.timeFormat('%A %-d %B %Y')(today);
