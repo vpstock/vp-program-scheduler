@@ -279,6 +279,30 @@ dash.draw('calendar', (el) => {
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
   let dragPerson = null;
+  // Pointer-based drag (works with mouse, touch and pen in every browser). Calls onDrop(elementUnderPointer).
+  let suppress = false;
+  const pdrag = (el, label, onDrop, onPlainClick) => {
+    el.style.touchAction = 'none';
+    el.addEventListener('pointerdown', (e0) => {
+      if (e0.button && e0.button !== 0) return;
+      const x0 = e0.clientX, y0 = e0.clientY; let ghost = null, moved = false;
+      const mv = (e1) => {
+        if (!moved && Math.hypot(e1.clientX - x0, e1.clientY - y0) < 6) return;
+        if (!moved) { moved = true; ghost = mk('div', 'pghost', label); document.body.appendChild(ghost); document.body.classList.add('pdragging'); }
+        ghost.style.left = (e1.clientX + 10) + 'px'; ghost.style.top = (e1.clientY + 10) + 'px';
+        document.querySelectorAll('.pdrop').forEach((n) => n.classList.remove('pdrop'));
+        const t = document.elementFromPoint(e1.clientX, e1.clientY); const z = t && t.closest('[data-drop]'); if (z) z.classList.add('pdrop');
+      };
+      const up = (e2) => {
+        document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        document.querySelectorAll('.pdrop').forEach((n) => n.classList.remove('pdrop'));
+        document.body.classList.remove('pdragging'); if (ghost) ghost.remove();
+        if (moved) { const t = document.elementFromPoint(e2.clientX, e2.clientY); const z = t && t.closest('[data-drop]'); suppress = true; setTimeout(() => { suppress = false; }, 50); if (z) onDrop(z); else toast('Drop it onto a job box on the day you want.'); }
+      };
+      document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+    });
+    el.addEventListener('click', (e) => { if (suppress) { e.preventDefault(); e.stopImmediatePropagation(); return; } if (onPlainClick) onPlainClick(e); });
+  };
   const toast = (msg) => { const t = mk('div', 'toast', msg); t.setAttribute('role', 'status'); document.body.appendChild(t); setTimeout(() => t.remove(), 3800); };
   // Drop a crew face on a job for a day: refused if they are off or already on a job that day.
   const dropPerson = (p, job, d) => {
@@ -307,10 +331,8 @@ dash.draw('calendar', (el) => {
       b.setAttribute('aria-pressed', String(ui.person === n));
       b.insertAdjacentHTML('afterbegin', faceSVG(n, 28));
       b.append(n);
-      b.onclick = () => { ui.person = ui.person === n ? null : n; ui.sel = null; render(); };
-      b.draggable = true; b.title = 'Click to filter. Drag onto a job on a day to schedule ' + n + '.';
-      b.ondragstart = (e5) => { dragPerson = n; b.classList.add('dragging'); try { e5.dataTransfer.effectAllowed = 'move'; e5.dataTransfer.setData('text/plain', n); } catch (e6) { /* ignore */ } };
-      b.ondragend = () => { dragPerson = null; b.classList.remove('dragging'); };
+      b.title = 'Click to filter. Drag onto a job on a day to schedule ' + n + '.'; b.style.cursor = 'grab';
+      pdrag(b, n, (z) => dropPerson(n, z.dataset.base, parseD(z.dataset.date)), () => { ui.person = ui.person === n ? null : n; ui.sel = null; render(); });
       cb.appendChild(b);
     });
     body.appendChild(cb);
@@ -415,6 +437,7 @@ dash.draw('calendar', (el) => {
               c.ondragstart = (ev2) => { dragRef = { r, from: dHere }; c.classList.add('dragging'); try { ev2.dataTransfer.effectAllowed = 'move'; ev2.dataTransfer.setData('text/plain', r.job); } catch (e) { /* ignore */ } };
               c.ondragend = () => { c.classList.remove('dragging'); dragRef = null; };
             }
+            c.dataset.drop = '1'; c.dataset.base = r.base; c.dataset.date = isoD(dHere);
             c.ondragover = (e5) => { if (dragPerson) { e5.preventDefault(); e5.stopPropagation(); c.classList.add('dropok'); } };
             c.ondragleave = () => c.classList.remove('dropok');
             c.ondrop = (e5) => { if (!dragPerson) return; e5.preventDefault(); e5.stopPropagation(); c.classList.remove('dropok'); const p0 = dragPerson; dragPerson = null; dropPerson(p0, r.base, dHere); };
@@ -479,7 +502,7 @@ dash.draw('calendar', (el) => {
       const col = mk('span', 'wc wj'); const js = jobsOn(d);
       if (!isWork(d) && !js.length) col.appendChild(mk('i', 'muted', HOL.includes(isoD(d)) ? 'Public holiday' : 'No roster'));
       js.forEach((j) => {
-        const t = mk('span', 'wjob', j); t.style.setProperty('--jc', jobColor(j));
+        const t = mk('span', 'wjob', j); t.style.setProperty('--jc', jobColor(j)); t.dataset.drop = '1'; t.dataset.base = j; t.dataset.date = isoD(d);
         t.ondragover = (e5) => { if (dragCrew && dragCrew.date === isoD(d)) { e5.preventDefault(); t.classList.add('dropok'); } };
         t.ondragleave = () => t.classList.remove('dropok');
         t.ondrop = (e5) => { e5.preventDefault(); t.classList.remove('dropok'); if (dragCrew && dragCrew.date === isoD(d)) { const p0 = dragCrew.person; dragCrew = null; assign(p0, j, d); } };
@@ -501,9 +524,9 @@ dash.draw('calendar', (el) => {
             cell.appendChild(t);
           });
         } else {
-          const pill = mk('button', 'wfree', 'Free'); pill.type = 'button'; pill.draggable = true; pill.title = 'Drag ' + p + ' onto a job on ' + shortD(d);
-          pill.ondragstart = (e5) => { dragCrew = { person: p, date: isoD(d) }; pill.classList.add('dragging'); try { e5.dataTransfer.effectAllowed = 'move'; e5.dataTransfer.setData('text/plain', p); } catch (e6) { /* ignore */ } };
-          pill.ondragend = () => { pill.classList.remove('dragging'); dragCrew = null; };
+          const pill = mk('button', 'wfree', 'Free'); pill.type = 'button'; pill.title = 'Drag ' + p + ' onto a job on ' + shortD(d);
+          pill.style.cursor = 'grab';
+          pdrag(pill, p, (z) => { if (z.dataset.date === isoD(d)) assign(p, z.dataset.base, d); else toast('Drop ' + p + ' onto a job on ' + shortD(d) + '.'); }, (e5) => { pill.dataset.open = '1'; });
           pill.onclick = (e5) => {
             e5.stopPropagation(); closeMenu();
             const js = jobsOn(d); const m = document.createElement('div'); m.className = 'ctxmenu'; m.setAttribute('role', 'dialog');

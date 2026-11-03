@@ -344,3 +344,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .cb.dragging{opacity:.4}
 .psp .chip.dropok{outline:2px solid #0b4fd4;background:#dff0ff}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0a1a4d;color:#fff;padding:10px 16px;border-radius:8px;font:500 14px 'Public Sans',Arial,sans-serif;z-index:60;max-width:90vw}
+
+.pghost{position:fixed;z-index:70;pointer-events:none;background:#0b4fd4;color:#fff;border-radius:8px;padding:4px 10px;font:600 13px 'Public Sans',Arial,sans-serif;box-shadow:0 4px 12px rgba(10,26,77,.3)}
+body.pdragging{cursor:grabbing;user-select:none}
+.psp .pdrop{outline:2px solid #0b4fd4;background:#dff0ff}
