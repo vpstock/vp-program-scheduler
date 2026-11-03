@@ -178,17 +178,64 @@ const shortD = d3.timeFormat('%a %-d %b');
 dash.draw('calendar', (el) => {
   const ev = ok('cal_events');
   if (!ev) { el.textContent = '—'; return; }
-  // Drag to move: a moved item is stored as a number of days to shift it, in this browser only (the CSV is not changed).
-  const MOVE_KEY = 'vp-sched-moves-v1';
+  // Edits made on the planner (drag, or right click to change the date or set a status). Saved in this browser only; the CSV is not changed.
+  const MOVE_KEY = 'vp-sched-edits-v1';
   let moves = {};
   try { moves = JSON.parse(localStorage.getItem(MOVE_KEY) || '{}') || {}; } catch (e) { moves = {}; }
-  const saveMoves = () => { try { localStorage.setItem(MOVE_KEY, JSON.stringify(moves)); } catch (e) { /* storage blocked: moves last until refresh */ } };
+  const saveMoves = () => { try { localStorage.setItem(MOVE_KEY, JSON.stringify(moves)); } catch (e) { /* storage blocked: edits last until refresh */ } };
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const mkey = (r) => [r.job, r.label, r.start, r.end].join('|');
+  const STATUS = { confirmed: 'Confirmed', discuss: 'To be discussed' };
   const items = ev.map((r, i) => {
-    const s0 = parseD(r.start), e0 = parseD(r.end), k = mkey(r), dd = Number(moves[k]) || 0;
-    return { ...r, i, key: k, moved: dd, s: addDays(s0, dd), e: addDays(e0, dd), base: baseJob(r.job) };
+    const k = mkey(r), ed = moves[k] || {};
+    const s = parseD(ed.start || r.start), e = parseD(ed.end || r.end);
+    const moved = Math.round((s - parseD(r.start)) / 86400000) || Math.round((e - parseD(r.end)) / 86400000);
+    return { ...r, i, key: k, moved, status: ed.status || '', s, e, base: baseJob(r.job) };
   });
+  const setEdit = (r, patch) => {
+    const ed = Object.assign({}, moves[r.key] || {}, patch);
+    const same0 = (!ed.start || ed.start === r.start) && (!ed.end || ed.end === r.end);
+    if (same0) { delete ed.start; delete ed.end; }
+    if (!ed.status) delete ed.status;
+    if (Object.keys(ed).length) moves[r.key] = ed; else delete moves[r.key];
+    saveMoves();
+    const e2 = moves[r.key] || {};
+    r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || '';
+    r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
+  };
+  let ctxMenu = null;
+  const closeMenu = () => { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } };
+  document.addEventListener('click', (e3) => { if (ctxMenu && !ctxMenu.contains(e3.target)) closeMenu(); });
+  document.addEventListener('keydown', (e3) => { if (e3.key === 'Escape') closeMenu(); });
+  const openMenu = (r, x, y, rerender) => {
+    closeMenu();
+    const m = document.createElement('div'); m.className = 'ctxmenu'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'Edit ' + r.job);
+    const h = document.createElement('strong'); h.textContent = r.job + ': ' + r.label; m.appendChild(h);
+    const sub = document.createElement('small'); sub.textContent = 'Applies to the whole item.'; m.appendChild(sub);
+    const row = document.createElement('div'); row.className = 'cmrow';
+    const mkIn = (lbl, val) => { const l = document.createElement('label'); l.textContent = lbl; const inp = document.createElement('input'); inp.type = 'date'; inp.value = val; l.appendChild(inp); row.appendChild(l); return inp; };
+    const si = mkIn('Start', isoD(r.s)), ei = mkIn('Finish', isoD(r.e));
+    m.appendChild(row);
+    const upd = document.createElement('button'); upd.type = 'button'; upd.className = 'cmbtn'; upd.textContent = 'Change date';
+    upd.onclick = () => {
+      if (!si.value || !ei.value) return;
+      let sv = si.value, ev3 = ei.value; if (ev3 < sv) { const t = sv; sv = ev3; ev3 = t; }
+      setEdit(r, { start: sv, end: ev3 }); closeMenu(); rerender();
+    };
+    m.appendChild(upd);
+    const st = document.createElement('div'); st.className = 'cmrow cmstat';
+    [['confirmed', 'Confirmed'], ['discuss', 'To be discussed'], ['', 'No status']].forEach(([v, t]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'cmbtn st-' + (v || 'none'); b.textContent = t; b.setAttribute('aria-pressed', String((r.status || '') === v));
+      b.onclick = () => { setEdit(r, { status: v }); closeMenu(); rerender(); };
+      st.appendChild(b);
+    });
+    m.appendChild(st);
+    document.body.appendChild(m); ctxMenu = m;
+    const w = m.offsetWidth, hh = m.offsetHeight;
+    m.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + 'px';
+    m.style.top = Math.max(8, Math.min(y, window.innerHeight - hh - 8)) + 'px';
+    si.focus();
+  };
   let dragRef = null;
   if (ui.m === null) {
     const now = new Date();
@@ -267,13 +314,13 @@ dash.draw('calendar', (el) => {
       al.appendChild(ul); body.appendChild(al);
     }
 
-    // Moved items banner
-    const nMoved = items.filter((r) => r.moved).length;
+    // Edits banner
+    const nEdit = items.filter((r) => r.moved || r.status).length;
     const tip = mk('div', 'movebar');
-    tip.append(mk('span', 'muted', nMoved ? nMoved + ' item' + (nMoved === 1 ? '' : 's') + ' moved from the schedule. Moves are saved in this browser only.' : 'Drag any item to another day to move it. Moves are saved in this browser only and do not change the Schedule Calendar.'));
-    if (nMoved) {
+    tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule. ' : '') + 'Drag an item to move it, or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
+    if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
-      rs.onclick = () => { moves = {}; saveMoves(); items.forEach((r) => { r.moved = 0; r.s = parseD(r.start); r.e = parseD(r.end); }); render(); };
+      rs.onclick = () => { moves = {}; saveMoves(); items.forEach((r) => { r.moved = 0; r.status = ''; r.s = parseD(r.start); r.e = parseD(r.end); }); render(); };
       tip.appendChild(rs);
     }
     body.appendChild(tip);
@@ -315,6 +362,8 @@ dash.draw('calendar', (el) => {
             if (r.kind !== 'claim') {
               c.draggable = true;
               if (r.moved) { c.classList.add('moved'); c.title += ' (moved ' + (r.moved > 0 ? '+' : '') + r.moved + ' d from the schedule)'; }
+              if (r.status) { c.classList.add('s-' + r.status); c.title += ' (' + STATUS[r.status] + ')'; c.insertAdjacentHTML('beforeend', r.status === 'confirmed' ? '<svg class="stbadge" viewBox="0 0 12 12" width="12" height="12" aria-label="Confirmed"><circle cx="6" cy="6" r="6" fill="#2b9348"/><path d="M3 6.2L5.2 8.3L9 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<b class="stbadge disc" title="To be discussed">To discuss</b>'); }
+              c.oncontextmenu = (e4) => { e4.preventDefault(); openMenu(r, e4.clientX, e4.clientY, render); };
               c.ondragstart = (ev2) => { dragRef = { r, from: dHere }; c.classList.add('dragging'); try { ev2.dataTransfer.effectAllowed = 'move'; ev2.dataTransfer.setData('text/plain', r.job); } catch (e) { /* ignore */ } };
               c.ondragend = () => { c.classList.remove('dragging'); dragRef = null; };
             }
@@ -329,11 +378,7 @@ dash.draw('calendar', (el) => {
             e2.preventDefault(); cell.classList.remove('dropok');
             if (!dragRef) return;
             const delta = Math.round((here - dragRef.from) / 86400000);
-            if (delta) {
-              const r0 = dragRef.r, cur = Number(moves[r0.key]) || 0, nv = cur + delta;
-              if (nv === 0) delete moves[r0.key]; else moves[r0.key] = nv;
-              saveMoves(); r0.moved = nv; r0.s = addDays(r0.s, delta); r0.e = addDays(r0.e, delta);
-            }
+            if (delta) { const r0 = dragRef.r; setEdit(r0, { start: isoD(addDays(r0.s, delta)), end: isoD(addDays(r0.e, delta)) }); }
             dragRef = null; render();
           };
         }
@@ -383,8 +428,9 @@ dash.draw('calendar', (el) => {
         ents.forEach((r) => {
           const st = stat(r);
           const line = mk('div', 'jline');
+          const stTxt = r.status ? ' [' + STATUS[r.status] + ']' : '';
           line.append(mk('span', 'pill' + (st === 'Now' ? ' ok' : st === 'Next' ? ' warn' : ''), st),
-            mk('span', '', ' ' + r.label + ', ' + range(r) + '. ' + r.note));
+            mk('span', '', ' ' + r.label + ', ' + range(r) + stTxt + '. ' + r.note));
           det.appendChild(line);
         });
         const sp = schedulePos(ents, today0, isWork);

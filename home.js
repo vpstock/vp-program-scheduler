@@ -23,9 +23,8 @@
 
   d3.csv('data/cal_events.csv?t=' + Date.now(), { cache: 'no-store' }).then((rows) => {
     let moves = {};
-    try { moves = JSON.parse(localStorage.getItem('vp-sched-moves-v1') || '{}') || {}; } catch (e) { moves = {}; }
-    const shift = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-    const ev = rows.map((r) => { const dd = Number(moves[[r.job, r.label, r.start, r.end].join('|')]) || 0; return { ...r, s: shift(parse(r.start), dd), e: shift(parse(r.end), dd), base: base(r.job) }; });
+    try { moves = JSON.parse(localStorage.getItem('vp-sched-edits-v1') || '{}') || {}; } catch (e) { moves = {}; }
+    const ev = rows.map((r) => { const ed = moves[[r.job, r.label, r.start, r.end].join('|')] || {}; return { ...r, s: parse(ed.start || r.start), e: parse(ed.end || r.end), status: ed.status || '', base: base(r.job) }; });
     const on = (r, d) => r.s <= d && d <= r.e;
     const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d));
 
