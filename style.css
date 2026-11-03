@@ -319,3 +319,23 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .ctxmenu .cmcheck input{margin-top:2px}
 .ctxmenu .cmdel{border-color:#e03131;color:#c92a2a}
 .ctxmenu .cmdel:hover{background:#e03131;color:#fff}
+
+/* weekly crew view */
+.psp .weekview{border:1px solid var(--color-border-line,#dfe4ec);border-radius:12px;padding:12px 16px;background:#fff}
+.psp .whead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.psp .whead h2{margin:0;flex:1;font-size:20px;font-family:'Newsreader',Georgia,serif;font-weight:500}
+.psp .wscroll{overflow-x:auto}
+.psp .wgrid{display:grid;grid-template-columns:110px repeat(var(--cols),minmax(120px,1fr));gap:4px;min-width:760px;font-size:12.5px}
+.psp .wc{min-height:34px;border-radius:6px;padding:4px 6px;display:flex;flex-direction:column;gap:3px;justify-content:center}
+.psp .wh{font-weight:700;color:#0a1a4d;background:#eef3ff}
+.psp .wl{font-weight:600;flex-direction:row;align-items:center;gap:6px;justify-content:flex-start}
+.psp .wj{background:#f7f8fa;justify-content:flex-start}
+.psp .wjob{display:block;border-left:4px solid var(--jc);background:#fff;border-radius:4px;padding:2px 6px;border-top:1px solid #dfe4ec;border-right:1px solid #dfe4ec;border-bottom:1px solid #dfe4ec}
+.psp .wjob.dropok{background:#dff0ff;box-shadow:0 0 0 2px #0b4fd4}
+.psp .wjob.busy{background:#eceff3;color:#6b7688;border-left-color:#aeb6c4;filter:grayscale(1);cursor:not-allowed;display:flex;gap:6px;align-items:center;justify-content:space-between}
+.psp .wbusy{background:#f1f3f6}
+.psp .woff{background:repeating-linear-gradient(45deg,#f1f3f6,#f1f3f6 6px,#e6e9ef 6px,#e6e9ef 12px);color:#6b7688;font-style:italic;align-items:center}
+.psp .wfree{font:600 12px 'Public Sans',Arial,sans-serif;border:1px dashed #0b4fd4;background:#eef3ff;color:#0b4fd4;border-radius:6px;padding:4px 8px;cursor:grab}
+.psp .wfree.dragging{opacity:.4}
+.psp .wx{font:600 11px 'Public Sans',Arial,sans-serif;border:1px solid #c7d0de;background:#fff;color:#c92a2a;border-radius:4px;padding:0 5px;cursor:pointer;filter:none}
+.psp .wlh{color:#6b7688;font-size:12px}

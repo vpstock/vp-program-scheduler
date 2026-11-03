@@ -192,6 +192,13 @@ dash.draw('calendar', (el) => {
     const moved = Math.round((s - parseD(r.start)) / 86400000) || Math.round((e - parseD(r.end)) / 86400000);
     return { ...r, i, key: k, moved, status: ed.status || '', deleted: !!ed.deleted, s, e, base: baseJob(r.job) };
   });
+  // Crew moved onto a job in the weekly view: stored as one-day roster rows, in this browser only.
+  const CREW_KEY = 'vp-sched-crew-v1';
+  let manual = [];
+  try { manual = JSON.parse(localStorage.getItem(CREW_KEY) || '[]') || []; } catch (e) { manual = []; }
+  const saveManual = () => { try { localStorage.setItem(CREW_KEY, JSON.stringify(manual)); } catch (e) { /* storage blocked */ } };
+  const mkManual = (m) => ({ job: m.job, label: 'Crew added: ' + m.person, start: m.date, end: m.date, kind: 'roster', note: m.person + '. Added on the planner.', i: -1, key: 'manual|' + m.job + '|' + m.date + '|' + m.person, moved: 0, status: (moves['manual|' + m.job + '|' + m.date + '|' + m.person] || {}).status || '', deleted: false, manual: true, s: parseD(m.date), e: parseD(m.date), base: baseJob(m.job) });
+  manual.forEach((m) => all.push(mkManual(m)));
   let items = all.filter((r) => !r.deleted);
   const setEdit = (r, patch) => {
     const ed = Object.assign({}, moves[r.key] || {}, patch);
@@ -416,6 +423,90 @@ dash.draw('calendar', (el) => {
     }
     wrap.appendChild(cal); body.appendChild(wrap);
 
+    // Weekly crew view: who is on which job each day. Crew already on a job (or off) are greyed and locked.
+    const offRows = ok('crew_off') || [];
+    const offOn = (p, d) => { const o = offRows.find((x) => x.person === p && x.date === isoD(d)); return o ? o.reason : (HOL.includes(isoD(d)) ? 'Public holiday' : ''); };
+    const PEOPLE_ROWS = ['Urv', 'Kei', 'Dan', 'Tandy', 'Matt B', 'Dan B', 'Jonte'];
+    const mondayOf = (d) => addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay() + 6) % 7));
+    if (!ui.wk) { const t0 = new Date(); ui.wk = (t0 >= mStart && t0 <= mEnd) ? mondayOf(t0) : mondayOf(mStart); }
+    const wkEnd = addDays(ui.wk, 5);
+    const wsec = mk('section', 'weekview');
+    const whead = mk('div', 'whead');
+    const pb = mk('button', 'clr', 'Previous week'); pb.type = 'button'; pb.onclick = () => { ui.wk = addDays(ui.wk, -7); render(); };
+    const nb = mk('button', 'clr', 'Next week'); nb.type = 'button'; nb.onclick = () => { ui.wk = addDays(ui.wk, 7); render(); };
+    whead.append(mk('h2', '', 'Crew this week: ' + shortD(ui.wk) + ' to ' + shortD(wkEnd)), pb, nb);
+    wsec.appendChild(whead);
+    wsec.appendChild(mk('p', 'muted', 'Crew on a job are greyed and locked, so nobody gets double booked. Drag a free person (blue) onto a job on the same day to add them. Click a free person to pick the job instead.'));
+    const wdays = [0, 1, 2, 3, 4, 5].map((n) => addDays(ui.wk, n));
+    const activeRows = (d) => items.filter((r) => r.kind !== 'claim' && r.s <= d && d <= r.e && (isoD(r.s) === isoD(r.e) || isWork(d)));
+    const jobsOn = (d) => [...new Set(activeRows(d).filter((r) => r.kind === 'roster' || r.kind === 'fantech' || r.kind === 'program').map((r) => r.base))];
+    const whoOn = (p, d) => activeRows(d).filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && crewOf(r).includes(p));
+    const tbl = mk('div', 'wgrid'); tbl.style.setProperty('--cols', String(wdays.length));
+    tbl.appendChild(mk('span', 'wc wh', ''));
+    wdays.forEach((d) => tbl.appendChild(mk('span', 'wc wh', shortD(d))));
+    // Jobs row: the drop targets
+    tbl.appendChild(mk('span', 'wc wl', 'Jobs on'));
+    let dragCrew = null;
+    const assign = (p, job, d) => {
+      const m = { job, date: isoD(d), person: p };
+      if (manual.some((x) => x.job === m.job && x.date === m.date && x.person === p)) return;
+      manual.push(m); saveManual();
+      const row = mkManual(m); delete moves[row.key]; saveMoves(); all.push(row); items = all.filter((x) => !x.deleted); render();
+    };
+    const unassign = (p, job, d) => {
+      manual = manual.filter((x) => !(x.job === job && x.date === isoD(d) && x.person === p)); saveManual();
+      const k = 'manual|' + job + '|' + isoD(d) + '|' + p; const ix = all.findIndex((x) => x.key === k); if (ix >= 0) all.splice(ix, 1);
+      items = all.filter((x) => !x.deleted); render();
+    };
+    wdays.forEach((d) => {
+      const col = mk('span', 'wc wj'); const js = jobsOn(d);
+      if (!isWork(d) && !js.length) col.appendChild(mk('i', 'muted', HOL.includes(isoD(d)) ? 'Public holiday' : 'No roster'));
+      js.forEach((j) => {
+        const t = mk('span', 'wjob', j); t.style.setProperty('--jc', jobColor(j));
+        t.ondragover = (e5) => { if (dragCrew && dragCrew.date === isoD(d)) { e5.preventDefault(); t.classList.add('dropok'); } };
+        t.ondragleave = () => t.classList.remove('dropok');
+        t.ondrop = (e5) => { e5.preventDefault(); t.classList.remove('dropok'); if (dragCrew && dragCrew.date === isoD(d)) { const p0 = dragCrew.person; dragCrew = null; assign(p0, j, d); } };
+        col.appendChild(t);
+      });
+      tbl.appendChild(col);
+    });
+    PEOPLE_ROWS.forEach((p) => {
+      const nm = mk('span', 'wc wl'); nm.insertAdjacentHTML('afterbegin', faceSVG(p, 22) + ' ' + p); tbl.appendChild(nm);
+      wdays.forEach((d) => {
+        const cell = mk('span', 'wc');
+        const off = offOn(p, d), on = whoOn(p, d);
+        if (off || (!isWork(d) && !on.length)) { cell.classList.add('woff'); cell.textContent = off || 'Off'; }
+        else if (on.length) {
+          cell.classList.add('wbusy');
+          on.forEach((r) => {
+            const t = mk('span', 'wjob busy', r.base); t.style.setProperty('--jc', jobColor(r.base)); t.title = p + ' is on ' + r.base + ' this day, so they cannot be moved to another job.';
+            if (r.manual) { const x = mk('button', 'wx', 'Remove'); x.type = 'button'; x.title = 'Remove ' + p + ' from ' + r.base + ' on ' + shortD(d); x.onclick = () => unassign(p, r.base, d); t.appendChild(x); }
+            cell.appendChild(t);
+          });
+        } else {
+          const pill = mk('button', 'wfree', 'Free'); pill.type = 'button'; pill.draggable = true; pill.title = 'Drag ' + p + ' onto a job on ' + shortD(d);
+          pill.ondragstart = (e5) => { dragCrew = { person: p, date: isoD(d) }; pill.classList.add('dragging'); try { e5.dataTransfer.effectAllowed = 'move'; e5.dataTransfer.setData('text/plain', p); } catch (e6) { /* ignore */ } };
+          pill.ondragend = () => { pill.classList.remove('dragging'); dragCrew = null; };
+          pill.onclick = (e5) => {
+            e5.stopPropagation(); closeMenu();
+            const js = jobsOn(d); const m = document.createElement('div'); m.className = 'ctxmenu'; m.setAttribute('role', 'dialog');
+            const h = document.createElement('strong'); h.textContent = p + ' on ' + shortD(d); m.appendChild(h);
+            if (!js.length) { const s = document.createElement('small'); s.textContent = 'No jobs on that day.'; m.appendChild(s); }
+            js.forEach((j) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cmbtn'; b.textContent = j; b.onclick = () => { closeMenu(); assign(p, j, d); }; m.appendChild(b); });
+            document.body.appendChild(m); ctxMenu = m;
+            const r0 = pill.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(r0.left, window.innerWidth - m.offsetWidth - 8)) + 'px'; m.style.top = Math.max(8, Math.min(r0.bottom + 4, window.innerHeight - m.offsetHeight - 8)) + 'px';
+          };
+          cell.appendChild(pill);
+        }
+        tbl.appendChild(cell);
+      });
+    });
+    const lh = mk('span', 'wc wl', 'Labour hire');
+    tbl.appendChild(lh);
+    wdays.forEach((d) => { const cell = mk('span', 'wc wlh'); const on = activeRows(d).filter((r) => /labour hire/i.test((r.label || '') + ' ' + (r.note || ''))).map((r) => r.base); cell.textContent = [...new Set(on)].join(', ') || ''; tbl.appendChild(cell); });
+    const sc = mk('div', 'wscroll'); sc.appendChild(tbl); wsec.appendChild(sc);
+    body.appendChild(wsec);
+
     // Job information: a list of jobs; click one to see what we are doing on it
     const today0 = new Date(); today0.setHours(0, 0, 0, 0);
     const stat = (r) => (r.s <= today0 && today0 <= r.e) ? 'Now' : (r.s > today0 ? 'Next' : 'Done');
@@ -587,4 +678,4 @@ dash.draw('calendar', (el) => {
   render();
 });
 
-dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones','finished','job_hours']);
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones','finished','job_hours','crew_off']);

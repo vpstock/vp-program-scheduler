@@ -25,6 +25,9 @@
     let moves = {};
     try { moves = JSON.parse(localStorage.getItem('vp-sched-edits-v1') || '{}') || {}; } catch (e) { moves = {}; }
     const ev = rows.filter((r) => !(moves[[r.job, r.label, r.start, r.end].join('|')] || {}).deleted).map((r) => { const ed = moves[[r.job, r.label, r.start, r.end].join('|')] || {}; return { ...r, s: parse(ed.start || r.start), e: parse(ed.end || r.end), status: ed.status || '', base: base(r.job) }; });
+    try {
+      JSON.parse(localStorage.getItem('vp-sched-crew-v1') || '[]').forEach((m) => ev.push({ job: m.job, label: 'Crew added: ' + m.person, kind: 'roster', note: m.person, s: parse(m.date), e: parse(m.date), base: m.job }));
+    } catch (e) { /* no stored crew moves */ }
     const on = (r, d) => r.s <= d && d <= r.e;
     const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d));
 
