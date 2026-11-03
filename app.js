@@ -179,7 +179,18 @@ const shortD = d3.timeFormat('%a %-d %b');
 dash.draw('calendar', (el) => {
   const ev = ok('cal_events');
   if (!ev) { el.textContent = '—'; return; }
-  const items = ev.map((r, i) => ({ ...r, i, s: parseD(r.start), e: parseD(r.end), base: baseJob(r.job) }));
+  // Drag to move: a moved item is stored as a number of days to shift it, in this browser only (the CSV is not changed).
+  const MOVE_KEY = 'vp-sched-moves-v1';
+  let moves = {};
+  try { moves = JSON.parse(localStorage.getItem(MOVE_KEY) || '{}') || {}; } catch (e) { moves = {}; }
+  const saveMoves = () => { try { localStorage.setItem(MOVE_KEY, JSON.stringify(moves)); } catch (e) { /* storage blocked: moves last until refresh */ } };
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mkey = (r) => [r.job, r.label, r.start, r.end].join('|');
+  const items = ev.map((r, i) => {
+    const s0 = parseD(r.start), e0 = parseD(r.end), k = mkey(r), dd = Number(moves[k]) || 0;
+    return { ...r, i, key: k, moved: dd, s: addDays(s0, dd), e: addDays(e0, dd), base: baseJob(r.job) };
+  });
+  let dragRef = null;
   if (ui.m === null) {
     const now = new Date();
     const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
@@ -246,6 +257,17 @@ dash.draw('calendar', (el) => {
     });
     body.appendChild(kp);
 
+    // Moved items banner
+    const nMoved = items.filter((r) => r.moved).length;
+    const tip = mk('div', 'movebar');
+    tip.append(mk('span', 'muted', nMoved ? nMoved + ' item' + (nMoved === 1 ? '' : 's') + ' moved from the schedule. Moves are saved in this browser only.' : 'Drag any item to another day to move it. Moves are saved in this browser only and do not change the Schedule Calendar.'));
+    if (nMoved) {
+      const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
+      rs.onclick = () => { moves = {}; saveMoves(); items.forEach((r) => { r.moved = 0; r.s = parseD(r.start); r.e = parseD(r.end); }); render(); };
+      tip.appendChild(rs);
+    }
+    body.appendChild(tip);
+
     // Grid
     const picked = ui.sel ? { base: ui.sel } : null;
     const wrap = mk('div', 'scroll');
@@ -260,6 +282,7 @@ dash.draw('calendar', (el) => {
       const row = mk('div', 'calrow');
       for (let i = 0; i < 7; i++) {
         const inM = day.getMonth() === mm;
+        const dHere = new Date(day);
         const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
         cell.appendChild(mk('span', 'dn', String(day.getDate())));
         if (inM && HOL.includes(isoD(day))) cell.appendChild(mk('span', 'hol', 'Public holiday'));
@@ -278,8 +301,30 @@ dash.draw('calendar', (el) => {
             c.insertAdjacentHTML('beforeend', '<i class="kd"></i>');
             c.title = r.job + ': ' + r.label;
             c.onclick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
+            if (r.kind !== 'claim') {
+              c.draggable = true;
+              if (r.moved) { c.classList.add('moved'); c.title += ' (moved ' + (r.moved > 0 ? '+' : '') + r.moved + ' d from the schedule)'; }
+              c.ondragstart = (ev2) => { dragRef = { r, from: dHere }; c.classList.add('dragging'); try { ev2.dataTransfer.effectAllowed = 'move'; ev2.dataTransfer.setData('text/plain', r.job); } catch (e) { /* ignore */ } };
+              c.ondragend = () => { c.classList.remove('dragging'); dragRef = null; };
+            }
             cell.appendChild(c);
           });
+        }
+        if (inM) {
+          const here = new Date(day);
+          cell.ondragover = (e2) => { if (dragRef) { e2.preventDefault(); cell.classList.add('dropok'); } };
+          cell.ondragleave = () => cell.classList.remove('dropok');
+          cell.ondrop = (e2) => {
+            e2.preventDefault(); cell.classList.remove('dropok');
+            if (!dragRef) return;
+            const delta = Math.round((here - dragRef.from) / 86400000);
+            if (delta) {
+              const r0 = dragRef.r, cur = Number(moves[r0.key]) || 0, nv = cur + delta;
+              if (nv === 0) delete moves[r0.key]; else moves[r0.key] = nv;
+              saveMoves(); r0.moved = nv; r0.s = addDays(r0.s, delta); r0.e = addDays(r0.e, delta);
+            }
+            dragRef = null; render();
+          };
         }
         row.appendChild(cell);
         day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);

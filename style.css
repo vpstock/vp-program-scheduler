@@ -282,3 +282,10 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 @keyframes clfx{0%,45%{opacity:0}50%,100%{opacity:1}}
 .psp .clfx{animation:clfx .64s steps(1) infinite}
 @media (prefers-reduced-motion:reduce){.psp .clfx{animation:none!important}}
+
+/* draggable schedule */
+.psp .chip[draggable=true]{cursor:grab}
+.psp .chip.dragging{opacity:.45}
+.psp .chip.moved{outline:2px dashed #f08c00;outline-offset:1px}
+.psp .day.dropok{background:#dff0ff;box-shadow:inset 0 0 0 2px #0b4fd4}
+.psp .movebar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px}
