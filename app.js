@@ -310,7 +310,8 @@ dash.draw('calendar', (el) => {
   let dragPerson = null;
   // Pointer-based drag (works with mouse, touch and pen in every browser). Calls onDrop(elementUnderPointer).
   let suppress = false;
-  const pdrag = (el, label, onDrop, onPlainClick) => {
+  const pdrag = (el, label, onDrop, onPlainClick, sel) => {
+    sel = sel || '[data-drop]';
     el.style.touchAction = 'none';
     el.addEventListener('pointerdown', (e0) => {
       if (e0.button && e0.button !== 0) return;
@@ -320,13 +321,13 @@ dash.draw('calendar', (el) => {
         if (!moved) { moved = true; ghost = mk('div', 'pghost', label); document.body.appendChild(ghost); document.body.classList.add('pdragging'); }
         ghost.style.left = (e1.clientX + 10) + 'px'; ghost.style.top = (e1.clientY + 10) + 'px';
         document.querySelectorAll('.pdrop').forEach((n) => n.classList.remove('pdrop'));
-        const t = document.elementFromPoint(e1.clientX, e1.clientY); const z = t && t.closest('[data-drop]'); if (z) z.classList.add('pdrop');
+        const t = document.elementFromPoint(e1.clientX, e1.clientY); const z = t && t.closest(sel); if (z) z.classList.add('pdrop');
       };
       const up = (e2) => {
         document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
         document.querySelectorAll('.pdrop').forEach((n) => n.classList.remove('pdrop'));
         document.body.classList.remove('pdragging'); if (ghost) ghost.remove();
-        if (moved) { const t = document.elementFromPoint(e2.clientX, e2.clientY); const z = t && t.closest('[data-drop]'); suppress = true; setTimeout(() => { suppress = false; }, 50); if (z) onDrop(z); else toast('Drop it onto a job box on the day you want.'); }
+        if (moved) { const t = document.elementFromPoint(e2.clientX, e2.clientY); const z = t && t.closest(sel); suppress = true; setTimeout(() => { suppress = false; }, 50); if (z) onDrop(z, e2); else toast(sel === '[data-day]' ? 'Drop it onto the day you want.' : 'Drop it onto a job box on the day you want.'); }
       };
       document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
     });
@@ -460,7 +461,7 @@ dash.draw('calendar', (el) => {
           items.filter(vis).forEach((r) => {
             if (day < r.s || day > r.e) return;
             const single = isoD(r.s) === isoD(r.e);
-            if (!single && !isWork(day)) return;
+            if (!single && !isWork(day) && isoD(day) !== isoD(r.s)) return;
             // Swan St IGA follows the program only: one box a day, with the crew's faces from the roster.
             let igaCrew = [], igaLabel = null;
             if (r.base === IGA) {
@@ -483,14 +484,16 @@ dash.draw('calendar', (el) => {
             if (crew.length) { c.textContent = ''; c.insertAdjacentHTML('afterbegin', crew.map((n) => faceSVG(n, 16)).join('') + ' '); c.append(r.kind === 'claim' ? r.label : r.job + ' · ' + shown); }
             c.insertAdjacentHTML('beforeend', '<i class="kd"></i>');
             c.title = r.job + ': ' + shown + (extra.length ? ' (added on the planner: ' + extra.join(', ') + ')' : '');
-            c.onclick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
+            const chipClick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
+            if (r.kind === 'claim') c.onclick = chipClick;
             if (r.kind !== 'claim') {
-              c.draggable = true;
+              pdrag(c, r.job, (z, e2) => {
+                const delta = Math.round((parseD(z.dataset.day) - dHere) / 86400000);
+                if (delta) { const oldS = new Date(r.s); setEdit(r, { start: isoD(addDays(r.s, delta)), end: isoD(addDays(r.e, delta)) }); if (e2.shiftKey) cascade(r, delta, oldS); render(); }
+              }, chipClick, '[data-day]');
               if (r.moved) { c.classList.add('moved'); c.title += ' (moved ' + (r.moved > 0 ? '+' : '') + r.moved + ' d from the schedule)'; }
               if (r.status) { c.classList.add('s-' + r.status); c.title += ' (' + STATUS[r.status] + ')'; c.insertAdjacentHTML('beforeend', r.status === 'confirmed' ? '<svg class="stbadge" viewBox="0 0 12 12" width="12" height="12" aria-label="Confirmed"><circle cx="6" cy="6" r="6" fill="#2b9348"/><path d="M3 6.2L5.2 8.3L9 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<b class="stbadge disc" title="To be discussed">To discuss</b>'); }
               c.oncontextmenu = (e4) => { e4.preventDefault(); openMenu(r, e4.clientX, e4.clientY, render); };
-              c.ondragstart = (ev2) => { dragRef = { r, from: dHere }; c.classList.add('dragging'); try { ev2.dataTransfer.effectAllowed = 'move'; ev2.dataTransfer.setData('text/plain', r.job); } catch (e) { /* ignore */ } };
-              c.ondragend = () => { c.classList.remove('dragging'); dragRef = null; };
             }
             c._row = r; c.dataset.drop = '1'; c.dataset.base = r.base; c.dataset.date = isoD(dHere);
             c.ondragover = (e5) => { if (dragPerson) { e5.preventDefault(); e5.stopPropagation(); c.classList.add('dropok'); } };
@@ -500,7 +503,7 @@ dash.draw('calendar', (el) => {
           });
         }
         if (inM) {
-          const here = new Date(day);
+          const here = new Date(day); cell.dataset.day = isoD(day);
           cell.ondragover = (e2) => { if (dragRef) { e2.preventDefault(); cell.classList.add('dropok'); } };
           cell.ondragleave = () => cell.classList.remove('dropok');
           cell.ondrop = (e2) => {
@@ -622,7 +625,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103g. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103h. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
