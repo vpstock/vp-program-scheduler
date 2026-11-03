@@ -6,3 +6,5 @@ Victorian Projects live program calendar, November 2026 to January 2027, with st
 - Data: `data/*.csv`. The page reads these files each time it loads and every 5 minutes after that.
 - A scheduled Claude task refreshes the CSVs each weekday morning from the WIP workbook, Mat's job programming agenda and builder programs. Edit a CSV here and the page updates within minutes.
 - Rough-in means mechanical rough-in services only.
+
+Published with GitHub Pages: https://vpstock.github.io/vp-program-scheduler/
