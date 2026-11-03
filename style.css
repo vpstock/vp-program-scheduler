@@ -348,3 +348,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .pghost{position:fixed;z-index:70;pointer-events:none;background:#0b4fd4;color:#fff;border-radius:8px;padding:4px 10px;font:600 13px 'Public Sans',Arial,sans-serif;box-shadow:0 4px 12px rgba(10,26,77,.3)}
 body.pdragging{cursor:grabbing;user-select:none}
 .psp .pdrop{outline:2px solid #0b4fd4;background:#dff0ff}
+
+.psp .actlogsec{border:1px solid var(--color-border-line,#dfe4ec);border-radius:12px;padding:12px 16px;background:#fff;margin-top:16px}
+.psp .logtbl{display:grid;grid-template-columns:170px 150px 1fr;gap:2px 12px;font-size:13px;max-height:420px;overflow:auto}
+.psp .logtbl b{position:sticky;top:0;background:#eef3ff;color:#0a1a4d;padding:4px 6px}
+.psp .logtbl span{padding:4px 6px;border-bottom:1px solid #dfe4ec}
+.psp .logtbl .lt{color:#6b7688}
+.psp .logtbl .lk{font-weight:600}
+@media (max-width:700px){.psp .logtbl{grid-template-columns:1fr}}

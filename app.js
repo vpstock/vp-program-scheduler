@@ -200,7 +200,19 @@ dash.draw('calendar', (el) => {
   const mkManual = (m) => ({ job: m.job, label: 'Crew added: ' + m.person, start: m.date, end: m.date, kind: 'roster', note: m.person + '. Added on the planner.', i: -1, key: 'manual|' + m.job + '|' + m.date + '|' + m.person, moved: 0, status: (moves['manual|' + m.job + '|' + m.date + '|' + m.person] || {}).status || '', deleted: false, manual: true, s: parseD(m.date), e: parseD(m.date), base: baseJob(m.job) });
   manual.forEach((m) => all.push(mkManual(m)));
   let items = all.filter((r) => !r.deleted);
+  // Activity log: every change made on the planner, newest first. Kept in this browser only.
+  const LOG_KEY = 'vp-sched-log-v1';
+  let actlog = [];
+  try { actlog = JSON.parse(localStorage.getItem(LOG_KEY) || '[]') || []; } catch (e) { actlog = []; }
+  const logAct = (type, job, text) => {
+    actlog.unshift({ t: new Date().toISOString(), type, job: job || '', text });
+    if (actlog.length > 1000) actlog.length = 1000;
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(actlog)); } catch (e) { /* storage blocked */ }
+  };
+  let cascading = '';
+  const rng = (s, e) => (isoD(s) === isoD(e) ? shortD(s) : shortD(s) + ' to ' + shortD(e));
   const setEdit = (r, patch) => {
+    const oS = r.s, oE = r.e, oSt = r.status || '', oDel = !!r.deleted;
     const ed = Object.assign({}, moves[r.key] || {}, patch);
     const same0 = (!ed.start || ed.start === r.start) && (!ed.end || ed.end === r.end);
     if (same0) { delete ed.start; delete ed.end; }
@@ -213,13 +225,18 @@ dash.draw('calendar', (el) => {
     r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
     r.deleted = !!e2.deleted;
     items = all.filter((x) => !x.deleted);
+    const who = r.job + ' · ' + r.label;
+    if (r.deleted && !oDel) logAct('Deleted', r.base, 'Deleted from the planner: ' + who + ' (' + rng(oS, oE) + ').');
+    else if (!r.deleted && oDel) logAct('Restored', r.base, 'Put back on the planner: ' + who + '.');
+    if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.'));
+    if ((r.status || '') !== oSt) logAct('Status', r.base, who + ': ' + (r.status ? STATUS[r.status] : 'status cleared') + '.');
   };
   // Move the later items of the same job by the same number of days (the job's dates follow the one you changed).
   const cascade = (r, delta, from) => {
     if (!delta) return 0;
     let n = 0;
     const td = new Date(); td.setHours(0, 0, 0, 0);
-    items.filter((x) => x !== r && x.base === r.base && x.kind !== 'claim' && x.s > from && x.s >= td).forEach((x) => { setEdit(x, { start: isoD(addDays(x.s, delta)), end: isoD(addDays(x.e, delta)) }); n++; });
+    cascading = r.label; items.filter((x) => x !== r && x.base === r.base && x.kind !== 'claim' && x.s > from && x.s >= td).forEach((x) => { setEdit(x, { start: isoD(addDays(x.s, delta)), end: isoD(addDays(x.e, delta)) }); n++; }); cascading = '';
     return n;
   };
   let ctxMenu = null;
@@ -278,6 +295,7 @@ dash.draw('calendar', (el) => {
   const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
+  const fmtT = (iso) => d3.timeFormat('%a %-d %b, %-I:%M %p')(new Date(iso));
   let dragPerson = null;
   // Pointer-based drag (works with mouse, touch and pen in every browser). Calls onDrop(elementUnderPointer).
   let suppress = false;
@@ -316,7 +334,7 @@ dash.draw('calendar', (el) => {
       const busy = items.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s <= x && x <= r.e && (isoD(r.s) === isoD(r.e) || isWork(x)) && crewOf(r).includes(p));
       if (o) skipped.push(shortD(x) + ' (' + o + ')'); else if (busy.length) skipped.push(shortD(x) + ' (on ' + busy[0].base + ')'); else { assignFn(p, job, x, true); done.push(x); }
     });
-    if (done.length) renderFn();
+    if (done.length) { logAct('Crew added', baseJob(job), p + ' added to ' + job + ' for ' + done.length + ' day' + (done.length > 1 ? 's' : '') + ' (' + rng(done[0], done[done.length - 1]) + ')' + (skipped.length ? '; locked, not added: ' + skipped.join(', ') : '') + '.'); renderFn(); }
     toast(done.length ? p + ' added to ' + job + ' for ' + done.length + ' day' + (done.length > 1 ? 's' : '') + ' (' + shortD(done[0]) + (done.length > 1 ? ' to ' + shortD(done[done.length - 1]) : '') + ').' + (skipped.length ? ' Locked, not added: ' + skipped.join(', ') + '.' : '') : p + ' could not be added: ' + skipped.join(', ') + '.');
   };
   let renderFn = () => {};
@@ -398,7 +416,7 @@ dash.draw('calendar', (el) => {
     tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule' + (nDel ? ' (' + nDel + ' deleted)' : '') + '. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
     if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
-      rs.onclick = () => { moves = {}; saveMoves(); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
+      rs.onclick = () => { logAct('Reset', '', 'Put everything back to the original schedule (date, status and delete changes cleared).'); moves = {}; saveMoves(); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
       tip.appendChild(rs);
     }
     body.appendChild(tip);
@@ -499,12 +517,12 @@ dash.draw('calendar', (el) => {
       const m = { job, date: isoD(d), person: p };
       if (manual.some((x) => x.job === m.job && x.date === m.date && x.person === p)) return;
       manual.push(m); saveManual();
-      const row = mkManual(m); delete moves[row.key]; saveMoves(); all.push(row); items = all.filter((x) => !x.deleted); if (!quiet) render();
+      const row = mkManual(m); delete moves[row.key]; saveMoves(); all.push(row); items = all.filter((x) => !x.deleted); if (!quiet) { logAct('Crew added', baseJob(job), p + ' added to ' + job + ' on ' + shortD(d) + '.'); render(); }
     };
     const unassign = (p, job, d) => {
       manual = manual.filter((x) => !(x.job === job && x.date === isoD(d) && x.person === p)); saveManual();
       const k = 'manual|' + job + '|' + isoD(d) + '|' + p; const ix = all.findIndex((x) => x.key === k); if (ix >= 0) all.splice(ix, 1);
-      items = all.filter((x) => !x.deleted); render();
+      items = all.filter((x) => !x.deleted); logAct('Crew removed', baseJob(job), p + ' removed from ' + job + ' on ' + shortD(d) + '.'); render();
     };
     wdays.forEach((d) => {
       const col = mk('span', 'wc wj'); const js = jobsOn(d);
@@ -555,6 +573,27 @@ dash.draw('calendar', (el) => {
     offOnFn = offOn; assignFn = assign; renderFn = render;
     const sc = mk('div', 'wscroll'); sc.appendChild(tbl); wsec.appendChild(sc);
     body.appendChild(wsec);
+
+    // Activity log
+    const lsec = mk('section', 'actlogsec');
+    const lh2 = mk('div', 'whead'); lh2.append(mk('h2', '', 'Activity log'));
+    const ex = mk('button', 'clr', 'Download as CSV'); ex.type = 'button';
+    ex.onclick = () => {
+      const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+      const csv = ['Time,Change,Job,Detail'].concat(actlog.map((l) => [fmtT(l.t), l.type, l.job, l.text].map(q).join(','))).join('\r\n');
+      const u = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const lk = document.createElement('a'); lk.href = u; lk.download = 'planner-activity-log.csv'; document.body.appendChild(lk); lk.click(); lk.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000);
+    };
+    lh2.appendChild(ex); lsec.appendChild(lh2);
+    lsec.appendChild(mk('p', 'muted', 'Every date change, status, delete and crew move made on the planner, newest first. It is kept in this browser only. ' + actlog.length + ' entr' + (actlog.length === 1 ? 'y' : 'ies') + '.'));
+    if (!actlog.length) lsec.appendChild(mk('p', 'muted', 'Nothing has been changed yet.'));
+    else {
+      const lt = mk('div', 'logtbl');
+      lt.append(mk('b', '', 'When'), mk('b', '', 'Change'), mk('b', '', 'Detail'));
+      actlog.slice(0, 150).forEach((l) => { lt.append(mk('span', 'lt', fmtT(l.t)), mk('span', 'lk', l.type), mk('span', '', l.text)); });
+      lsec.appendChild(lt);
+      if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
+    }
+    body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
     const today0 = new Date(); today0.setHours(0, 0, 0, 0);
