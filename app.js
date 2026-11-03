@@ -203,6 +203,14 @@ dash.draw('calendar', (el) => {
     r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || '';
     r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
   };
+  // Move the later items of the same job by the same number of days (the job's dates follow the one you changed).
+  const cascade = (r, delta, from) => {
+    if (!delta) return 0;
+    let n = 0;
+    const td = new Date(); td.setHours(0, 0, 0, 0);
+    items.filter((x) => x !== r && x.base === r.base && x.kind !== 'claim' && x.s > from && x.s >= td).forEach((x) => { setEdit(x, { start: isoD(addDays(x.s, delta)), end: isoD(addDays(x.e, delta)) }); n++; });
+    return n;
+  };
   let ctxMenu = null;
   const closeMenu = () => { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } };
   document.addEventListener('click', (e3) => { if (ctxMenu && !ctxMenu.contains(e3.target)) closeMenu(); });
@@ -216,11 +224,18 @@ dash.draw('calendar', (el) => {
     const mkIn = (lbl, val) => { const l = document.createElement('label'); l.textContent = lbl; const inp = document.createElement('input'); inp.type = 'date'; inp.value = val; l.appendChild(inp); row.appendChild(l); return inp; };
     const si = mkIn('Start', isoD(r.s)), ei = mkIn('Finish', isoD(r.e));
     m.appendChild(row);
+    const cl = document.createElement('label'); cl.className = 'cmcheck';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+    cl.append(cb, document.createTextNode(' Move the later items on this job by the same number of days'));
+    m.appendChild(cl);
     const upd = document.createElement('button'); upd.type = 'button'; upd.className = 'cmbtn'; upd.textContent = 'Change date';
     upd.onclick = () => {
       if (!si.value || !ei.value) return;
       let sv = si.value, ev3 = ei.value; if (ev3 < sv) { const t = sv; sv = ev3; ev3 = t; }
-      setEdit(r, { start: sv, end: ev3 }); closeMenu(); rerender();
+      const oldS = new Date(r.s), delta = Math.round((parseD(sv) - oldS) / 86400000);
+      setEdit(r, { start: sv, end: ev3 });
+      if (cb.checked) cascade(r, delta, oldS);
+      closeMenu(); rerender();
     };
     m.appendChild(upd);
     const st = document.createElement('div'); st.className = 'cmrow cmstat';
@@ -317,7 +332,7 @@ dash.draw('calendar', (el) => {
     // Edits banner
     const nEdit = items.filter((r) => r.moved || r.status).length;
     const tip = mk('div', 'movebar');
-    tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule. ' : '') + 'Drag an item to move it, or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
+    tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
     if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
       rs.onclick = () => { moves = {}; saveMoves(); items.forEach((r) => { r.moved = 0; r.status = ''; r.s = parseD(r.start); r.e = parseD(r.end); }); render(); };
@@ -378,7 +393,7 @@ dash.draw('calendar', (el) => {
             e2.preventDefault(); cell.classList.remove('dropok');
             if (!dragRef) return;
             const delta = Math.round((here - dragRef.from) / 86400000);
-            if (delta) { const r0 = dragRef.r; setEdit(r0, { start: isoD(addDays(r0.s, delta)), end: isoD(addDays(r0.e, delta)) }); }
+            if (delta) { const r0 = dragRef.r, oldS = new Date(r0.s); setEdit(r0, { start: isoD(addDays(r0.s, delta)), end: isoD(addDays(r0.e, delta)) }); if (e2.shiftKey) cascade(r0, delta, oldS); }
             dragRef = null; render();
           };
         }

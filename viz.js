@@ -139,7 +139,7 @@
       const cur = sorted.find((r) => r.s <= today && today <= r.e);
       if (cur) { const [lo, hi] = stageRange(cur); return { pos: lo + (hi - lo) * frac(cur), active: [cur] }; }
       const past = sorted.filter((r) => r.e < today);
-      if (!past.length) return { pos: stageRange(sorted[0])[0], active: [sorted[0]] };
+      if (!past.length) return { pos: 0, active: [sorted[0]] }; // not started yet: still in rough-in until the crew say it is complete
       const last = past[past.length - 1], next = sorted.find((r) => r.s > today);
       return { pos: next ? Math.max(stageRange(last)[1], stageRange(next)[0]) : stageRange(last)[1], active: [next || last] };
     }
