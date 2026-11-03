@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103r. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103s. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -735,7 +735,7 @@ dash.draw('calendar', (el) => {
         const isLC = /459 Little Collins/i.test(ui.sel);
         const isCondRep = /368 smith/i.test(ui.sel);
         const stU = (ok('stage_used') || []).filter((x) => same(x.job, ui.sel));
-        const noSplit = (!!sh && /no stage split/i.test(sh.basis || '')) || stU.length > 0;
+        const noSplit = !!sh && /no stage split/i.test(sh.basis || '');
         const isSmall = isCondRep || (!isFire && !isLC && !!sh && (+sh.demo_h || 0) + (+sh.rough_h || 0) + (+sh.fit_h || 0) + (+sh.comm_h || 0) === 0 && (+sh.unsplit_h || 0) > 0 && (+sh.unsplit_h || 0) <= 40);
         if (isLC) {
           // 459 Little Collins St: Levels 3, 4, 8, 9, 10 and 11, then commissioning
@@ -778,6 +778,14 @@ dash.draw('calendar', (el) => {
           const toPos = (h) => { let cum = 0; for (let k = 0; k < 4; k++) { if (zoneH[k] > 0 && h <= cum + zoneH[k]) return k + (h - cum) / zoneH[k]; cum += zoneH[k]; } return 4; };
           const used = +sh.used_h || 0, sched = hrow ? +hrow.sched_h || 0 : 0;
           posUse = toPos(used); hrPlan = sched ? toPos(used + sched) : 0;
+        }
+        if (stU.length) {
+          // Hours by stage from Simpro: the marker sits in the furthest stage that has hours on it. Earlier stages that are over their
+          // estimate show as a running over stretch on the stage the crew have moved into, until the crew say they are complete.
+          const SIDX = { 'rough-in': 0, 'fit-off': 1, 'cut-out': 2, 'commissioning': 3 };
+          let pp = 0;
+          stU.forEach((x) => { const k = SIDX[String(x.stage).toLowerCase()]; const e = +x.est_h || 0, u = +x.used_h || 0; if (k !== undefined && u > 0 && e > 0) pp = Math.max(pp, k + Math.min(1, u / e)); });
+          posUse = pp; hrPlan = 0;
         }
         const stg = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
         const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));
