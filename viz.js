@@ -68,8 +68,8 @@
       (hv ? '<path d="M-12 -30H12M-12 -24H12" stroke="#e9ecef" stroke-width="2.2"/>' : '<rect x="-12.5" y="-20" width="25" height="5" rx="2" fill="#0a1a4d" fill-opacity=".25"/>') +
       '<rect x="-12.5" y="-17" width="25" height="4" fill="#0a1a4d" fill-opacity=".35"/>' +
       '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>' +
-      '<rect x="-4" y="-56" width="8" height="12" rx="2" fill="' + sk + '"/><rect x="-4" y="-50" width="8" height="2.5" fill="#000" opacity=".12"/>' +
-      '<g transform="translate(-22,-85) scale(1.1)">' + headInner(name) + '</g>' +
+      '<rect x="-4" y="-51" width="8" height="8" rx="2" fill="' + sk + '"/><rect x="-4" y="-47" width="8" height="2" fill="#000" opacity=".12"/>' +
+      '<g transform="translate(-22,-80) scale(1.1)">' + headInner(name) + '</g>' +
       '</g>';
   };
   window.figSVG = (name, h) => '<svg class="fig" viewBox="-26 -90 70 92" height="' + h + '" width="' + Math.round(h * 70 / 92) + '" role="img" aria-label="' + name + '">' + figInner(name) + '</svg>';

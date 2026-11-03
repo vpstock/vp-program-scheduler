@@ -13,6 +13,20 @@
     walk.innerHTML = CREW.map((n, i) => '<span class="hw" style="animation-delay:' + (-i * 3.2) + 's">' + figSVG(n, 84) + '</span>').join('');
   }
 
+  // Ceiling run: ductwork and equipment go in piece by piece while the crew walk underneath
+  const ceil = document.getElementById('heroCeil');
+  if (ceil) {
+    const seq = ['duct','duct','diff','duct','duct','split','duct','duct','fan','duct'];
+    let x = 3;
+    ceil.innerHTML = '<i class="slab"></i>' + seq.map((k, i) => {
+      const w = { duct: 9.4, diff: 6, split: 11, fan: 7 }[k];
+      const html = '<span class="ci ' + k + '" style="left:' + x + '%;width:' + w + '%;animation-delay:' + (i * 1.5).toFixed(1) + 's"><b class="rod"></b><b class="rod r2"></b>' +
+        (k === 'split' ? '<em class="louv"></em><u class="air"><s></s><s></s><s></s></u>' : k === 'fan' ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#0a1a4d" stroke-width="2"/><g class="spinfan2"><path d="M12 12V4M12 12L19 16M12 12L5 16" stroke="#0b4fd4" stroke-width="3" stroke-linecap="round"/></g></svg>' : k === 'diff' ? '<em class="lv"></em><em class="lv l2"></em><em class="lv l3"></em>' : '<em class="fl"></em><em class="fl f2"></em>') + '</span>';
+      x += w + 0.6;
+      return html;
+    }).join('');
+  }
+
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tEl = document.getElementById('todayDate');
   if (tEl) tEl.textContent = d3.timeFormat('%A %-d %B %Y')(today);
