@@ -69,14 +69,26 @@
     o = o || {};
     const p = PEOPLE[name] || GENERIC, sk = p.skin, sh = p.shirt;
     const hv = sh === '#f59f00' || sh === '#f76707' || sh === '#1c7ed6';
+    const legsStand = '<g class="leg l1"><path d="M-5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-10" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
+      '<g class="leg l2"><path d="M5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-0.5" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>';
+    const legsSit = '<g class="legs"><path d="M-4 -18H12" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><path d="M12 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="7" y="-5" width="11" height="5.5" rx="2.5" fill="#3b2a1a"/></g>';
+    const legs = o.sit ? legsSit : legsStand;
+    const leftArm = o.clap
+      ? '<g class="arm"><path d="M-11 -39L-3 -31" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle class="cl-l" cx="-1.5" cy="-31" r="3.4" fill="' + sk + '"/></g>'
+      : (o.up ? '' : '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>');
+    const drink = '<path d="M11 -39L21 -37L25 -47" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="25.5" cy="-48" r="3.6" fill="' + sk + '"/>' +
+      '<rect x="22" y="-64" width="10" height="15" rx="2" fill="#f5b301" stroke="#14181e" stroke-width="1.2"/><rect x="22" y="-67" width="10" height="5" rx="2.5" fill="#fff" stroke="#14181e" stroke-width="1"/><path d="M24.5 -60V-52M29.5 -60V-52" stroke="#fff" stroke-width="1" opacity=".6"/>';
+    const rightArm = o.clap
+      ? '<g class="rarm2"><path d="M11 -39L3 -31" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle class="cl-r" cx="1.5" cy="-31" r="3.4" fill="' + sk + '"/></g>'
+      : o.drink ? drink
+      : (o.up ? '<path d="M-11 -41L-20 -62L-18 -82M11 -41L20 -62L18 -82" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-18" cy="-85" r="3.6" fill="' + sk + '"/><circle cx="18" cy="-85" r="3.6" fill="' + sk + '"/>' : '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>');
     return '<g class="figure">' +
-      '<g class="leg l1"><path d="M-5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-10" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
-      '<g class="leg l2"><path d="M5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-0.5" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
-      (o.up ? '' : '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>' ) +
+      legs +
+      leftArm +
       '<rect x="-12.5" y="-46" width="25" height="31" rx="8" fill="' + sh + '" stroke="#0a1a4d" stroke-width="1.4"/>' +
       (hv ? '<path d="M-12 -30H12M-12 -24H12" stroke="#e9ecef" stroke-width="2.2"/>' : '<rect x="-12.5" y="-20" width="25" height="5" rx="2" fill="#0a1a4d" fill-opacity=".25"/>') +
       '<rect x="-12.5" y="-17" width="25" height="4" fill="#0a1a4d" fill-opacity=".35"/>' +
-      (o.up ? '<path d="M-11 -41L-20 -62L-18 -82M11 -41L20 -62L18 -82" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-18" cy="-85" r="3.6" fill="' + sk + '"/><circle cx="18" cy="-85" r="3.6" fill="' + sk + '"/>' : '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>') +
+      rightArm +
       '<rect x="-4" y="-51" width="8" height="8" rx="2" fill="' + sk + '"/><rect x="-4" y="-47" width="8" height="2" fill="#000" opacity=".12"/>' +
       '<g transform="translate(-22,-80) scale(1.1)">' + headInner(name) + '</g>' +
       '</g>';
@@ -342,5 +354,63 @@
     s += '</svg>';
     host.innerHTML = s;
     animate(host, Object.assign({}, o, { gy: py }));
+  };
+
+  // ---- Points, celebration scene and leaderboard ----
+  window.pointsFor = function (est, act) {
+    est = parseFloat(est); act = parseFloat(act);
+    if (!est || isNaN(act)) return null;
+    if (act <= est) return 5;               // at or under the hours
+    return (act / est - 1) >= 0.5 ? 1 : 3;   // 50% or more over: 1, otherwise 3
+  };
+  window.namesOf = (s) => String(s || '').split(/,| and /).map((x) => x.trim()).filter(Boolean);
+
+  // Finished job: whoever finished it sits back with a drink if the job came in on hours; everyone applauds either way
+  window.buildCelebration = function (host, o) {
+    // o: {name, within, others:[names], reduce}
+    const W = 440, H = 176, G = 150, who = o.name || '';
+    const nm = namesOf(who), star = nm[0] || '';
+    const others = (o.others || []).filter((n) => !nm.includes(n)).slice(0, star ? 4 : 5);
+    let s = '<svg class="celeb" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (o.aria || 'Finished job') + '">' +
+      '<defs><pattern id="bp5" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
+      '<rect width="' + W + '" height="' + H + '" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="' + H + '" rx="10" fill="url(#bp5)"/>';
+    const cols = ['#0b4fd4', '#12aef4', '#f59f00', '#2b9348', '#e8590c'];
+    for (let i = 0; i < 12; i++) s += '<path d="M' + (20 + i * 36) + ' 6l9 0l-4.5 10z" fill="' + cols[i % 5] + '" opacity=".85"/>';
+    s += '<path d="M14 6H' + (W - 14) + '" stroke="#0a1a4d" stroke-width="1.5"/>';
+    for (let i = 0; i < 14; i++) s += '<rect class="conf c' + (i % 4) + '" x="' + (14 + i * 30) + '" y="' + (20 + (i * 17) % 30) + '" width="5" height="9" fill="' + cols[(i + 2) % 5] + '" style="animation-delay:' + (-i * .23) + 's"/>';
+    s += '<rect x="10" y="' + G + '" width="' + (W - 20) + '" height="8" rx="3" fill="#dfe6f1" stroke="#0a1a4d" stroke-width="1.5"/>';
+    const spots = star ? (o.within ? [52, 118, 322, 388] : [52, 120, 320, 388]) : [60, 140, 220, 300, 380];
+    others.forEach((n, i) => { const x = (i < 2 ? spots[i] : spots[i]); s += '<g transform="translate(' + x + ',' + G + ') scale(.9)"><g class="cheer" style="animation-delay:' + (-i * .17) + 's">' + figInner(n, { clap: true }) + '</g></g>'; });
+    if (!star) {
+      // nobody recorded as finishing it: just the applause
+    } else if (o.within) {
+      // chair, then the finisher seated with a drink
+      s += '<g transform="translate(220,' + G + ')"><rect x="-18" y="-13" width="32" height="5" rx="2" fill="#8a5a2b" stroke="#14181e" stroke-width="1"/><path d="M-16 -8V0M12 -8V0" stroke="#14181e" stroke-width="3"/><path d="M-17 -13V-52" stroke="#8a5a2b" stroke-width="5" stroke-linecap="round"/><rect x="-17" y="-52" width="4" height="40" fill="none"/></g>';
+      s += '<g transform="translate(220,' + G + ')"><g class="sip">' + figInner(star, { sit: true, drink: true }) + '</g></g>';
+    } else {
+      s += '<g transform="translate(220,' + G + ')"><g class="cheer">' + figInner(star, { clap: true }) + '</g></g>';
+    }
+    s += '<text x="220" y="' + (G + 20) + '" text-anchor="middle" style="font:700 12px Public Sans,Arial,sans-serif;fill:#0a1a4d">' + (who ? who.replace(/&/g, '&amp;') : 'Job finished') + '</text>';
+    s += '</svg>';
+    host.innerHTML = s;
+  };
+
+  window.buildLeaderboard = function (host, rows, names) {
+    const tally = {};
+    names.forEach((n) => { tally[n] = []; });
+    rows.forEach((r) => {
+      const p = pointsFor(r.est_h, r.actual_h);
+      if (p === null) return;
+      namesOf(r.completed_by).forEach((n) => { (tally[n] = tally[n] || []).push({ job: r.job, pts: p }); });
+    });
+    const list = Object.keys(tally).map((n) => ({ n, jobs: tally[n], tot: tally[n].reduce((a, b) => a + b.pts, 0) })).sort((a, b) => b.tot - a.tot || a.n.localeCompare(b.n));
+    const max = Math.max(10, ...list.map((x) => x.tot));
+    const colour = { 5: '#2b9348', 3: '#f08c00', 1: '#e03131' };
+    host.innerHTML = list.map((x) =>
+      '<div class="lb"><span class="lbf">' + faceSVG(x.n, 34) + '</span><b>' + x.n + '</b>' +
+      '<span class="lbbar" role="img" aria-label="' + x.n + ' ' + x.tot + ' points">' +
+      x.jobs.map((j) => '<i style="width:' + (j.pts / max * 100) + '%;background:' + colour[j.pts] + '" title="' + j.job + ': ' + j.pts + ' points">' + j.pts + '</i>').join('') + '</span>' +
+      '<em>' + x.tot + ' pts</em>' +
+      '<small>' + (x.jobs.length ? x.jobs.map((j) => j.job + ' ' + j.pts).join(', ') : 'No finished jobs yet') + '</small></div>').join('');
   };
 })();

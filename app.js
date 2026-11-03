@@ -358,6 +358,30 @@ dash.draw('calendar', (el) => {
           buildSurveyTrack(tw, { items: tk, walkers: crew, color: jobColor(ui.sel), reduce: rcReduce, aria: ui.sel + ' site progress', unit: 'items' });
           det.appendChild(mk('span', 'muted', 'From the Slack job channel posts (last updated ' + (asOf(jobMs.filter((x) => /^task:/i.test(x.milestone))) || '') + '). A ring with a number means still to do; orange means part done.'));
         }
+        const finRow = (ok('finished') || []).find((x) => same(x.job, ui.sel));
+        if (finRow) {
+          const fp = pointsFor(finRow.est_h, finRow.actual_h);
+          det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + finRow.finished : '') + ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' + (fp !== null && finRow.completed_by ? ', ' + fp + ' points for ' + finRow.completed_by : '')));
+          const fw = mk('div', 'trackwrap'); det.appendChild(fw);
+          buildCelebration(fw, { name: finRow.completed_by, within: fp === 5 && !!finRow.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' });
+        }
+        const hr = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
+        if (hr) {
+          const u = +hr.used_h, e = +hr.est_h, pc = Math.round(u / e * 100);
+          det.appendChild(mk('span', 'muted', 'Hours from Simpro (' + hr.simpro_ref + ', ' + hr.as_of + '): ' + u + ' of ' + e + ' h used (' + pc + '%), ' + Math.max(0, e - u) + ' h left.'));
+          const hb = mk('div', 'daybar'); const hf = document.createElement('i'); hf.style.width = Math.min(100, pc) + '%'; hf.style.background = pc > 100 ? '#e03131' : '#2b9348'; hb.appendChild(hf); det.appendChild(hb);
+        }
+        if (/IGA/i.test(ui.sel)) {
+          const endRow = ents.find((r) => /crew leaves/i.test(r.label));
+          const ros = ents.filter((r) => r.kind === 'roster');
+          if (endRow && ros.length) {
+            const s0 = new Date(Math.min(...ros.map((r) => +r.s))), e0 = endRow.e, y0 = new Date(today0.getTime() - 86400000);
+            let tot = 0, dn = 0;
+            for (let x = new Date(s0); x <= e0; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) { tot++; if (x <= y0) dn++; }
+            det.appendChild(mk('span', 'muted', 'Program days on site (as at 28 Oct): ' + dn + ' of ' + tot + ' working days done. Crew leaves site ' + shortD(e0) + '.'));
+            const db = mk('div', 'daybar'); const dfill = document.createElement('i'); dfill.style.width = Math.round(dn / tot * 100) + '%'; dfill.style.background = jobColor(ui.sel); db.appendChild(dfill); det.appendChild(db);
+          }
+        }
         const th = mk('div', 'trackwrap'); det.appendChild(th);
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
@@ -409,4 +433,4 @@ dash.draw('calendar', (el) => {
   render();
 });
 
-dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones']);
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones','finished','job_hours']);
