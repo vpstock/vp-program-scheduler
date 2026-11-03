@@ -219,6 +219,7 @@
     s += '<clipPath id="pc"><rect class="pfill" x="' + X0 + '" y="' + GY + '" width="' + (px(pos) - X0) + '" height="22"/></clipPath>' +
       '<rect x="' + X0 + '" y="' + GY + '" width="' + ZW * 4 + '" height="22" rx="3" fill="' + opts.color + '" clip-path="url(#pc)"/>' +
       '<g clip-path="url(#pc)"><path class="flow" d="M' + (X0 - 40) + ' ' + (GY + 11) + 'h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>' +
+      (opts.plan && opts.plan > pos ? '<rect x="' + px(pos) + '" y="' + (GY + 3) + '" width="' + (px(Math.min(4, opts.plan)) - px(pos)) + '" height="16" fill="' + opts.color + '" fill-opacity=".3" stroke="' + opts.color + '" stroke-dasharray="5 3"/>' : '') +
       '<rect x="' + X0 + '" y="' + GY + '" width="' + ZW * 4 + '" height="22" rx="3" fill="none" stroke="#0a1a4d" stroke-width="2"/>';
     // handover flag
     s += '<g transform="translate(' + (W - 20) + ',' + (GY - 88) + ')"><path d="M0 0V88" stroke="#0a1a4d" stroke-width="3"/><path class="flag" d="M0 2H34L26 14L34 26H0Z" fill="' + (conf >= 4 && opts.complete ? '#2b9348' : '#adb5bd') + '"/></g>';

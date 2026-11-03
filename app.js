@@ -409,10 +409,18 @@ dash.draw('calendar', (el) => {
           const todayWork = ents.some((r) => r.s <= today0 && today0 <= r.e) && isWork(today0);
           buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
         } else {
+        let posUse = /anytime/i.test(ui.sel) ? 0 : sp.pos, hrPlan = 0;
+        const hrow = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
+        if (hrow && hrow.stage && +hrow.stage_used_h >= 0 && sh) {
+          // Position from the hours in Simpro: worked to date, then scheduled ahead. Overlap only if the total passes the stage estimate.
+          const si = ['rough-in', 'fit-off', 'cut-out', 'commissioning'].indexOf(String(hrow.stage).toLowerCase());
+          const est = +[sh.rough_h, sh.fit_h, 0, sh.comm_h][si];
+          if (si >= 0 && est > 0) { posUse = si + (+hrow.stage_used_h) / est; hrPlan = si + ((+hrow.stage_used_h) + (+hrow.stage_sched_h || 0)) / est; }
+        }
         const stg = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
         const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));
         let confirmed = 0; while (confirmed < 4 && stDone(stg[confirmed])) confirmed++;
-        buildTrack(th, { confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: /anytime/i.test(ui.sel) ? 0 : sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
+        buildTrack(th, { plan: hrPlan, confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: posUse, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
         }
         det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. A stage is only ticked once the crew say it is complete. Red stripes show scheduled time running past the end of a stage.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
       } else {
