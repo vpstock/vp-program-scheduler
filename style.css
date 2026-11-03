@@ -229,3 +229,12 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .stn .spk{animation:spark .4s steps(2,end) infinite}
 .psp .stn .dim{animation:air 1.8s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.psp .hw,.psp .hw *{animation:none!important}}
+
+.psp svg.track .run{animation:vib .18s steps(2,end) infinite}
+.psp svg.track .beacon{animation:blink .7s steps(2,end) infinite}
+.psp svg.track .hflow{animation:dashflow .9s linear infinite}
+.psp svg.track .puff{animation:puff 1.4s ease-out infinite}
+@keyframes vib{50%{transform:translateY(-1px)}}
+@keyframes blink{50%{fill:#e03131}}
+@keyframes dashflow{to{stroke-dashoffset:-12}}
+@keyframes puff{0%{opacity:0;transform:translate(0,0)}30%{opacity:1}100%{opacity:0;transform:translate(-10px,-12px)}}

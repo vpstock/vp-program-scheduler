@@ -207,24 +207,38 @@
       '<defs><pattern id="bp2" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
       '<rect width="' + W + '" height="215" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="215" rx="10" fill="url(#bp2)"/>' +
       '<path d="M' + (X0 - 6) + ' 52L' + (W / 2) + ' 14L' + (W - X0 + 6) + ' 52Z" fill="#c92a2a" stroke="#0a1a4d" stroke-width="2.5"/>' +
-      '<rect x="' + X0 + '" y="52" width="' + (W - 2 * X0) + '" height="98" fill="#f1e4d4" stroke="#0a1a4d" stroke-width="2.5"/>' +
+      '<rect x="' + X0 + '" y="52" width="' + (W - 2 * X0) + '" height="98" fill="#e9eef7" stroke="#0a1a4d" stroke-width="2.5"/>' +
       '<text x="' + (W / 2) + '" y="44" text-anchor="middle" class="zl" style="fill:#fff">Fire station · ' + n + (n === 1 ? ' bay' : ' bays') + ' · ' + days + (days === 1 ? ' day' : ' days') + '</text>';
+    // Overhead rail the Fantech hose trolleys run on
+    s += '<path d="M' + (X0 + 6) + ' 70H' + (W - X0 - 6) + '" stroke="#0a1a4d" stroke-width="5" stroke-linecap="round"/><path d="M' + (X0 + 6) + ' 74H' + (W - X0 - 6) + '" stroke="#8a97ab" stroke-width="2"/>';
     for (let i = 0; i < n; i++) {
-      const x = start + i * (bw + gap), doneB = d >= (i + 1) * days / n, curB = !doneB && d > i * days / n;
-      const up = doneB ? 66 : curB ? 38 : 0;
-      s += '<rect x="' + (x + 6) + '" y="62" width="' + (bw - 12) + '" height="88" fill="#cfe3f7" stroke="#0a1a4d" stroke-width="2"/>';
-      // Fantech extraction arm: hose from the ceiling to the exhaust pipe
+      const x = start + i * (bw + gap), fr = Math.min(1, Math.max(0, (d - i * days / n) / (days / n)));
+      const doneB = fr >= 1, curB = !doneB && fr > 0;
+      const sc = Math.min(1, (bw - 14) / 150), tx0 = x + 7, ty = 148 - 62 * sc;
+      const nx = tx0 + 5 * sc, ny = ty + 43 * sc;               // exhaust nozzle at the rear of the truck
+      const parked = x + bw - 16, conn = nx + 12 * sc;          // trolley parks at the right, then slides left to connect
+      const trx = parked + (conn - parked) * fr;
+      const ex = doneB ? nx : trx - 7, ey = doneB ? ny : 98 + 14 * (1 - fr);
+      const hose = 'M' + trx + ' 76C' + trx + ' ' + (ey - 8) + ' ' + (ex + (doneB ? -14 : 0)) + ' ' + (ey - 22) + ' ' + ex + ' ' + ey;
+      // truck, facing right
+      s += '<g class="' + (doneB ? 'run' : '') + '" opacity="' + (doneB || curB ? 1 : .6) + '"><g transform="translate(' + tx0 + ',' + ty + ') scale(' + sc + ')">' +
+        '<rect x="14" y="8" width="76" height="5" rx="2" fill="#adb5bd" stroke="#0a1a4d" stroke-width="1.5"/><path d="M24 8V13M36 8V13M48 8V13M60 8V13M72 8V13" stroke="#0a1a4d" stroke-width="1.5"/>' +
+        '<rect x="6" y="38" width="140" height="12" rx="3" fill="#2b2f3a" stroke="#0a1a4d" stroke-width="2"/>' +
+        '<rect x="10" y="14" width="88" height="28" rx="3" fill="#d92c2c" stroke="#0a1a4d" stroke-width="2.5"/><path d="M40 16V40M68 16V40M14 28H96" stroke="#7f1313" stroke-width="1.5"/>' +
+        '<path d="M100 22H128Q142 24 144 40V42H100Z" fill="#d92c2c" stroke="#0a1a4d" stroke-width="2.5"/><path d="M120 25H130Q138 27 140 36H120Z" fill="#cfe9fb" stroke="#0a1a4d" stroke-width="1.5"/>' +
+        '<rect x="104" y="14" width="14" height="6" rx="2" fill="' + (doneB || curB ? '#ffd43b' : '#adb5bd') + '" stroke="#0a1a4d" stroke-width="1.5"' + (doneB || curB ? ' class="beacon"' : '') + '/>' +
+        '<circle cx="144" cy="34" r="3.2" fill="' + (doneB ? '#fff3bf' : '#868e96') + '" stroke="#0a1a4d" stroke-width="1"/>' +
+        '<rect x="0" y="40" width="9" height="7" rx="2" fill="#6b7688" stroke="#0a1a4d" stroke-width="1.5"/>' +
+        '<g><circle cx="34" cy="52" r="10" fill="#14181e"/><circle cx="34" cy="52" r="4" fill="#adb5bd"/><circle cx="116" cy="52" r="10" fill="#14181e"/><circle cx="116" cy="52" r="4" fill="#adb5bd"/></g>' +
+        '</g></g>';
+      // trolley on the rail, hose to the exhaust
+      s += '<path d="' + hose + '" stroke="#0a1a4d" stroke-width="8" fill="none" stroke-linecap="round" opacity=".9"/><path d="' + hose + '" stroke="#e8590c" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+        (doneB ? '<path class="hflow" d="' + hose + '" stroke="#fff" stroke-width="2.2" fill="none" stroke-dasharray="3 9" stroke-linecap="round"/>' : '') +
+        '<rect x="' + (trx - 9) + '" y="63" width="18" height="14" rx="3" fill="#fff" stroke="#0a1a4d" stroke-width="2"/><circle cx="' + (trx - 4) + '" cy="79" r="2.2" fill="#0a1a4d"/><circle cx="' + (trx + 4) + '" cy="79" r="2.2" fill="#0a1a4d"/>';
+      if (doneB) s += '<g class="puff"><circle cx="' + (nx - 8) + '" cy="' + (ny + 2) + '" r="3" fill="#868e96" opacity=".6"/><circle cx="' + (nx - 14) + '" cy="' + (ny - 4) + '" r="2.2" fill="#868e96" opacity=".5"/></g>';
       const cx = x + bw / 2;
-      s += '<g class="art' + (doneB || curB ? '' : ' dimart') + '"><path d="M' + (cx - 24) + ' 62V84Q' + (cx - 24) + ' 108 ' + (cx + 4) + ' 112" stroke="#c8641c" stroke-width="7" fill="none" stroke-linecap="round"/>' +
-        '<rect x="' + (cx + 2) + '" y="104" width="22" height="16" rx="3" fill="#0a1a4d"/>' +
-        '<g class="air"><path d="M' + (cx + 30) + ' 108q6 6 0 12M' + (cx + 40) + ' 108q6 6 0 12" stroke="#12aef4" stroke-width="2.5" fill="none" stroke-linecap="round"/></g></g>';
-      const sh = 88 - up;
-      s += '<g class="shutter">' + (sh > 0 ? '<rect x="' + (x + 6) + '" y="62" width="' + (bw - 12) + '" height="' + sh + '" fill="#dfe6f1" stroke="#0a1a4d" stroke-width="2"/>' : '') +
-        '<path d="M' + (x + 6) + ' ' + (62 + sh) + 'H' + (x + bw - 6) + '" stroke="#0a1a4d" stroke-width="4"/>';
-      for (let k = 1; k < 7; k++) { const yy = 62 + k * 12.5; if (yy < 62 + sh - 2) s += '<path d="M' + (x + 6) + ' ' + yy + 'H' + (x + bw - 6) + '" stroke="#8a97ab" stroke-width="1.5"/>'; }
-      s += '</g>';
-      s += '<text x="' + cx + '" y="' + 168 + '" text-anchor="middle" class="zl" style="font-size:11px">Bay ' + (i + 1) + (doneB ? ' done' : curB ? ' in progress' : '') + '</text>';
-      if (doneB) s += '<g transform="translate(' + (x + bw - 26) + ',66)"><circle r="9" cx="0" cy="8" fill="#2b9348"/><path d="M-4 8L-1 11L5 4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
+      s += '<text x="' + cx + '" y="168" text-anchor="middle" class="zl" style="font-size:11px">Truck ' + (i + 1) + (doneB ? ' connected, running' : curB ? ' connecting' : ' waiting') + '</text>';
+      if (doneB) s += '<g transform="translate(' + (x + bw - 26) + ',54)"><circle r="9" cx="0" cy="8" fill="#2b9348"/><path d="M-4 8L-1 11L5 4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
     }
     // day blocks on the ground: one block per working day
     const sw = (W - 2 * X0) / days, gy = 178;

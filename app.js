@@ -367,7 +367,7 @@ dash.draw('calendar', (el) => {
           buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
         } else
         buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
-        det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by bay and by day, with no rough-in, fit-off or commissioning.' : '')));
+        det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
       }
