@@ -170,7 +170,7 @@ const KIND = {
   claim: { name: 'Progress claim', c: 'var(--color-ok)' }
 };
 const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
-const ui = { m: null, kinds: new Set(Object.keys(KIND)), job: 'all', pick: null };
+const ui = { m: null, kinds: new Set(Object.keys(KIND)), job: 'all', sel: null };
 const baseJob = (j) => String(j).replace(/ L\d+$/, '');
 const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const shortD = d3.timeFormat('%a %-d %b');
@@ -203,15 +203,15 @@ dash.draw('calendar', (el) => {
       const b = mk('button', 'fbtn', v.name); b.type = 'button';
       b.style.setProperty('--k', v.c);
       b.setAttribute('aria-pressed', String(ui.kinds.has(k)));
-      b.onclick = () => { ui.kinds.has(k) ? ui.kinds.delete(k) : ui.kinds.add(k); ui.pick = null; render(); };
+      b.onclick = () => { ui.kinds.has(k) ? ui.kinds.delete(k) : ui.kinds.add(k); ui.sel = null; render(); };
       fl.appendChild(b);
     });
     const sel = mk('select'); sel.setAttribute('aria-label', 'Filter by job');
     const jobs = [...new Set(items.filter((r) => r.kind !== 'claim').map((r) => r.base))].sort();
     [['all', 'All jobs'], ...jobs.map((j) => [j, j])].forEach(([v, t]) => { const o = mk('option', '', t); o.value = v; if (v === ui.job) o.selected = true; sel.appendChild(o); });
-    sel.onchange = () => { ui.job = sel.value; ui.pick = null; render(); };
+    sel.onchange = () => { ui.job = sel.value; ui.sel = null; render(); };
     const clr = mk('button', 'clr', 'Reset'); clr.type = 'button';
-    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.pick = null; render(); };
+    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.sel = null; render(); };
     fl.append(sel, clr);
     body.appendChild(fl);
 
@@ -232,7 +232,7 @@ dash.draw('calendar', (el) => {
     body.appendChild(kp);
 
     // Grid
-    const picked = ui.pick === null ? null : items[ui.pick];
+    const picked = ui.sel ? { base: ui.sel } : null;
     const wrap = mk('div', 'scroll');
     const cal = mk('div', 'cal' + (picked ? ' picked' : ''));
     const head = mk('div', 'calrow calhead');
@@ -258,7 +258,7 @@ dash.draw('calendar', (el) => {
             c.type = 'button';
             c.style.setProperty('--k', kd.c);
             c.title = r.job + ': ' + r.label;
-            c.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
+            c.onclick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
             cell.appendChild(c);
           });
         }
@@ -269,40 +269,67 @@ dash.draw('calendar', (el) => {
     }
     wrap.appendChild(cal); body.appendChild(wrap);
 
-    // Detail
+    // Job information: a list of jobs; click one to see what we are doing on it
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    const stat = (r) => (r.s <= today0 && today0 <= r.e) ? 'Now' : (r.s > today0 ? 'Next' : 'Done');
+    const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const same = (x, y) => { const p = norm(x), q = norm(y); return p && q && (p.includes(q) || q.includes(p)); };
+    const wipRows = ok('wip_nov') || [];
+    const wipFor = (name) => wipRows.find((w) => same(w.job, name));
+    const range = (r) => isoD(r.s) === isoD(r.e) ? shortD(r.s) : shortD(r.s) + ' to ' + shortD(r.e);
+    const dated = mItems.filter((r) => r.kind !== 'claim');
+    const firstStart = (n) => Math.min(...dated.filter((r) => r.base === n).map((r) => +r.s));
+    const names = [...new Set(dated.map((r) => r.base))].sort((x, y) => firstStart(x) - firstStart(y));
+    const wipOnly = (ui.m === 0 && ui.job === 'all') ? wipRows.filter((w) => !names.some((n) => same(w.job, n))) : [];
+
+    const list = mk('div', 'joblist');
+    const addJob = (name, label) => {
+      const b = mk('button', 'jbtn'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(ui.sel === name));
+      b.append(mk('span', '', name), mk('small', 'muted', label));
+      b.onclick = () => { ui.sel = ui.sel === name ? null : name; render(); };
+      list.appendChild(b);
+    };
+    names.forEach((n) => {
+      const st = dated.filter((r) => r.base === n).map(stat);
+      addJob(n, st.includes('Now') ? 'On now' : (st.includes('Next') ? 'Coming up' : 'Done this month'));
+    });
+    wipOnly.forEach((w) => addJob(w.job, items.some((r) => r.kind !== 'claim' && same(r.base, w.job)) ? 'Dated in a later month' : 'No dates yet'));
+    if (!list.children.length) list.appendChild(mk('span', 'muted', 'Nothing matches these filters for this month.'));
+
     const det = mk('div', 'detail');
-    if (picked) {
-      det.style.setProperty('--k', (KIND[picked.kind] || {}).c || 'var(--color-border-line)');
-      det.append(mk('strong', '', picked.job + ': ' + picked.label),
-        mk('span', '', isoD(picked.s) === isoD(picked.e) ? shortD(picked.s) : shortD(picked.s) + ' to ' + shortD(picked.e)),
-        mk('span', 'muted', (KIND[picked.kind] || {}).name || picked.kind),
-        mk('span', '', picked.note));
-      const others = items.filter((r) => r.base === picked.base && r.i !== picked.i && r.kind !== 'claim');
-      if (others.length) det.appendChild(mk('span', 'muted', 'Other dates for this job: ' + others.map((r) => r.label + ' ' + shortD(r.s)).join('; ')));
+    if (ui.sel) {
+      const isWipOnly = wipOnly.some((w) => w.job === ui.sel);
+      const ents = items.filter((r) => r.kind !== 'claim' && (r.base === ui.sel || (isWipOnly && same(r.base, ui.sel)))).sort((x, y) => x.s - y.s);
+      det.style.setProperty('--k', ents[0] ? (KIND[ents[0].kind] || {}).c : 'var(--color-border-line)');
+      det.appendChild(mk('strong', '', ui.sel));
+      if (ents.length) {
+        det.appendChild(mk('span', 'muted', 'What we are doing on this job'));
+        ents.forEach((r) => {
+          const st = stat(r);
+          const line = mk('div', 'jline');
+          line.append(mk('span', 'pill' + (st === 'Now' ? ' ok' : st === 'Next' ? ' warn' : ''), st),
+            mk('span', '', ' ' + r.label + ', ' + range(r) + '. ' + r.note));
+          det.appendChild(line);
+        });
+      } else {
+        det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
+      }
+      const w = wipFor(ui.sel);
+      if (w) {
+        det.appendChild(mk('span', 'muted', 'On the WIP'));
+        det.appendChild(mk('span', '', w.this_month + '. Claim day: ' + w.claim_day + '. Program: ' + w.dates + '.'));
+      }
     } else {
-      det.appendChild(mk('span', 'muted', 'Click a box in the calendar, or a row below, to see the detail and every date for that job.'));
+      det.appendChild(mk('span', 'muted', 'Click a job to see what we are doing on it.'));
     }
     const jd = mk('details', 'jobinfo');
     jd.appendChild(mk('summary', '', 'Job information'));
+    jd.appendChild(list);
     jd.appendChild(det);
-    jd.open = !!ui.jobOpen || picked !== null;
+    jd.open = !!ui.jobOpen || !!ui.sel;
     jd.addEventListener('toggle', () => { ui.jobOpen = jd.open; });
-
-    // Agenda
-    const sc = mk('div', 'scroll');
-    const tb = mk('table');
-    const thd = mk('thead'); const hr = mk('tr');
-    ['Job', 'What', 'From', 'To', 'Type'].forEach((t) => hr.appendChild(mk('th', '', t)));
-    thd.appendChild(hr); tb.appendChild(thd);
-    const tbody = mk('tbody');
-    mItems.slice().sort((a, b) => a.s - b.s || a.job.localeCompare(b.job)).forEach((r) => {
-      const tr = mk('tr', 'click' + (ui.pick === r.i ? ' pick' : ''));
-      [r.job, r.label, shortD(r.s), shortD(r.e), (KIND[r.kind] || {}).name || r.kind].forEach((t) => tr.appendChild(mk('td', '', t)));
-      tr.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
-      tbody.appendChild(tr);
-    });
-    if (!mItems.length) { const tr = mk('tr'); const td = mk('td', '', 'Nothing matches these filters for this month.'); td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr); }
-    tb.appendChild(tbody); sc.appendChild(tb); jd.appendChild(sc); body.appendChild(jd);
+    body.appendChild(jd);
   }
   render();
 });

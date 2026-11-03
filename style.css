@@ -99,3 +99,9 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 
 .psp a.back{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);background:var(--color-panel);color:var(--color-fg);text-decoration:none;font-weight:500}
 .psp a.back:hover{border-color:#0b4fd4;color:#0b4fd4}
+
+.psp .joblist{display:flex;flex-wrap:wrap;gap:8px}
+.psp .jbtn{font:inherit;font-size:var(--cds-font-size-caption);color:inherit;background:var(--color-bg);border:1px solid var(--color-border-line);border-radius:8px;padding:6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:0;text-align:left}
+.psp .jbtn:hover{border-color:#0b4fd4}
+.psp .jbtn[aria-pressed="true"]{border-color:#0b4fd4;background:var(--color-panel);outline:2px solid #0b4fd4;outline-offset:-1px}
+.psp .jline{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
