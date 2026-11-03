@@ -167,8 +167,7 @@ const KIND = {
   fantech: { name: 'Fantech fire station', c: '#12aef4' },
   roster: { name: 'Crew roster (Schedule Calendar)', c: '#7a4fd4' },
   proposed: { name: 'Proposed estimate', c: 'var(--color-fg-muted)', dash: true },
-  pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true },
-  claim: { name: 'Progress claim', c: 'var(--color-ok)' }
+  pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true }
 };
 const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
 const ui = { person: null, m: null, kinds: new Set(Object.keys(KIND)), job: 'all', sel: null };
@@ -251,8 +250,7 @@ dash.draw('calendar', (el) => {
     const kp = mk('div', 'kpis');
     [['Jobs on the calendar', new Set(mItems.filter((r) => r.kind !== 'claim').map((r) => r.base)).size],
      ['Fire station days', fsDays],
-     ['Crew roster entries', mItems.filter((r) => r.kind === 'roster').length],
-     ['Progress claim days', mItems.filter((r) => r.kind === 'claim').length]].forEach(([l, v]) => {
+     ['Crew roster entries', mItems.filter((r) => r.kind === 'roster').length]].forEach(([l, v]) => {
       const k = mk('div', 'kpi'); k.append(mk('span', 'muted', l), mk('b', '', String(v))); kp.appendChild(k);
     });
     body.appendChild(kp);
