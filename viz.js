@@ -181,12 +181,13 @@
   const walkersSvg = (opts, W, px, pos) => {
     let s = '';
     const n = opts.walkers.length;
+    const gap = 54, span = (n - 1) * gap;
+    const c0 = Math.max(X0 + 16 + span / 2, Math.min(W - 40 - span / 2, px));
     opts.walkers.forEach((name, i) => {
-      const off = (i - (n - 1) / 2) * 48;
-      const x = Math.min(W - 40, Math.max(X0 + 16, px + off));
+      const x = c0 + (i - (n - 1) / 2) * gap;
       s += '<g class="walker" data-x="' + x + '" style="transform:translate(' + (opts.reduce ? x : X0 + 16) + 'px,' + (opts.gy || GY) + 'px)">' +
         '<g class="bob">' + figInner(name) + '</g>' +
-        (opts.noNames ? '' : '<text y="' + (i % 2 ? 50 : 38) + '" text-anchor="middle" class="wn">' + name + '</text>') + '</g>';
+        (opts.noNames ? '' : '<text y="' + (38 + (i % 3) * 12) + '" text-anchor="middle" class="wn">' + name + '</text>') + '</g>';
     });
     if (!n) s += '<g class="walker" data-x="' + Math.max(X0 + 16, px) + '" style="transform:translate(' + (opts.reduce ? Math.max(X0 + 16, px) : X0 + 16) + 'px,' + (opts.gy || GY) + 'px)"><g class="bob"><rect x="-11" y="-30" width="22" height="18" rx="6" fill="#adb5bd"/><path d="M-14 -34Q-14 -52 0 -52Q14 -52 14 -34Z" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/><rect x="-17" y="-36" width="34" height="5" rx="2.5" fill="#fab005" stroke="#c98a00" stroke-width="1.5"/></g><text y="38" text-anchor="middle" class="wn">Crew not rostered</text></g>';
     return s;
