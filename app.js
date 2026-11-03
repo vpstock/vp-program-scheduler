@@ -408,9 +408,13 @@ dash.draw('calendar', (el) => {
           if (today0 > s0) { const upto = new Date(Math.min(+today0 - 86400000, +e0)); ents.forEach((r) => { for (let x = new Date(r.s); x <= r.e && x <= upto; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) done++; }); }
           const todayWork = ents.some((r) => r.s <= today0 && today0 <= r.e) && isWork(today0);
           buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
-        } else
-        buildTrack(th, { pos: /anytime/i.test(ui.sel) ? 0 : sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
-        det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
+        } else {
+        const stg = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
+        const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));
+        let confirmed = 0; while (confirmed < 4 && stDone(stg[confirmed])) confirmed++;
+        buildTrack(th, { confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: /anytime/i.test(ui.sel) ? 0 : sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
+        }
+        det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. A stage is only ticked once the crew say it is complete. Red stripes show scheduled time running past the end of a stage.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
       }

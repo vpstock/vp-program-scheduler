@@ -198,11 +198,17 @@
     const W = X0 * 2 + ZW * 4, pos = Math.min(4, Math.max(0, opts.pos));
     const px = (p) => X0 + p * ZW;
     let s = '<svg class="track" viewBox="0 0 ' + W + ' 215" role="img" aria-label="' + (opts.aria || 'Job progress') + '">' +
-      '<defs><pattern id="bp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
+      '<defs><pattern id="ov" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#e03131" fill-opacity=".10"/><path d="M0 0V10" stroke="#e03131" stroke-opacity=".45" stroke-width="3"/></pattern><pattern id="bp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
       '<rect width="' + W + '" height="215" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="215" rx="10" fill="url(#bp)"/>';
+    // A stage is only ticked when the crew have said it is complete (opts.confirmed). The stage they are in stays unticked,
+    // and any schedule or hours past the end of it show as an overlap on the next stage.
+    const conf = opts.confirmed === undefined ? Math.floor(pos) : Math.min(4, opts.confirmed);
+    const cs = Math.min(3, conf);
     for (let i = 0; i < 4; i++) {
-      const x = X0 + i * ZW, cur = pos >= i && pos < i + 1 && pos < 4, dn = pos >= i + 1;
+      const x = X0 + i * ZW, dn = i < conf, cur = !dn && i === cs && conf < 4, ovr = !dn && !cur && pos > i;
       if (cur) s += '<rect class="zcur" x="' + x + '" y="12" width="' + ZW + '" height="150" fill="' + opts.color + '" fill-opacity=".12"/>';
+      if (ovr) s += '<rect class="zover" x="' + x + '" y="12" width="' + Math.min(ZW, (pos - i) * ZW) + '" height="150" fill="url(#ov)"/>' +
+        '<text x="' + (x + 6) + '" y="13" class="zl" style="fill:#c92a2a;font-size:10px">Running over from ' + STAGES[cs] + '</text>';
       s += '<g class="zone' + (dn ? ' done' : cur ? ' cur' : ' todo') + '">' + zoneArt[i](x + ZW / 2) + '</g>';
       s += '<text x="' + (x + ZW / 2) + '" y="30" text-anchor="middle" class="zl">' + STAGES[i] + (opts.hours && opts.hours[i] ? ' · ' + opts.hours[i] + ' h' : '') + '</text>';
       if (dn) s += '<g transform="translate(' + (x + ZW - 22) + ',16)"><circle r="9" cx="0" cy="8" fill="#2b9348"/><path d="M-4 8L-1 11L5 4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
@@ -215,7 +221,7 @@
       '<g clip-path="url(#pc)"><path class="flow" d="M' + (X0 - 40) + ' ' + (GY + 11) + 'h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5m34 0h8l6-5v10l-6-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>' +
       '<rect x="' + X0 + '" y="' + GY + '" width="' + ZW * 4 + '" height="22" rx="3" fill="none" stroke="#0a1a4d" stroke-width="2"/>';
     // handover flag
-    s += '<g transform="translate(' + (W - 20) + ',' + (GY - 88) + ')"><path d="M0 0V88" stroke="#0a1a4d" stroke-width="3"/><path class="flag" d="M0 2H34L26 14L34 26H0Z" fill="' + (pos >= 4 ? '#2b9348' : '#adb5bd') + '"/></g>';
+    s += '<g transform="translate(' + (W - 20) + ',' + (GY - 88) + ')"><path d="M0 0V88" stroke="#0a1a4d" stroke-width="3"/><path class="flag" d="M0 2H34L26 14L34 26H0Z" fill="' + (conf >= 4 && opts.complete ? '#2b9348' : '#adb5bd') + '"/></g>';
     s += '<text x="' + (W - 20) + '" y="' + (GY + 38) + '" text-anchor="end" class="zl">Handover</text>';
     s += walkersSvg(opts, W, px(pos), pos);
     s += '</svg>';
