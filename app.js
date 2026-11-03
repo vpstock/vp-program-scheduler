@@ -171,7 +171,7 @@ const KIND = {
   claim: { name: 'Progress claim', c: 'var(--color-ok)' }
 };
 const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
-const ui = { m: null, kinds: new Set(Object.keys(KIND)), job: 'all', sel: null };
+const ui = { person: null, m: null, kinds: new Set(Object.keys(KIND)), job: 'all', sel: null };
 const baseJob = (j) => String(j).replace(/ L\d+$/, '');
 const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const shortD = d3.timeFormat('%a %-d %b');
@@ -185,7 +185,7 @@ dash.draw('calendar', (el) => {
     const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
     ui.m = idx >= 0 ? idx : 0;
   }
-  const vis = (r) => ui.kinds.has(r.kind) && (ui.job === 'all' || r.base === ui.job);
+  const vis = (r) => ui.kinds.has(r.kind) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
   function render() {
@@ -197,6 +197,19 @@ dash.draw('calendar', (el) => {
 
     const body = mk('div', 'fade'); body.style.cssText = 'display:flex;flex-direction:column;gap:var(--cds-gap-md);padding-top:var(--cds-gap-md)';
     el.appendChild(body);
+
+    // Crew faces: click one to see only that person's days
+    const cb = mk('div', 'crewbar');
+    cb.appendChild(mk('span', 'muted', 'On the tools:'));
+    CREW.forEach((n) => {
+      const b = mk('button', 'cb'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(ui.person === n));
+      b.insertAdjacentHTML('afterbegin', faceSVG(n, 28));
+      b.append(n);
+      b.onclick = () => { ui.person = ui.person === n ? null : n; ui.sel = null; render(); };
+      cb.appendChild(b);
+    });
+    body.appendChild(cb);
 
     // Filters
     const fl = mk('div', 'filters');
@@ -213,7 +226,7 @@ dash.draw('calendar', (el) => {
     [['all', 'All jobs'], ...jobs.map((j) => [j, j])].forEach(([v, t]) => { const o = mk('option', '', t); o.value = v; if (v === ui.job) o.selected = true; sel.appendChild(o); });
     sel.onchange = () => { ui.job = sel.value; ui.sel = null; render(); };
     const clr = mk('button', 'clr', 'Reset'); clr.type = 'button';
-    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.sel = null; render(); };
+    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.person = null; ui.sel = null; render(); };
     fl.append(sel, clr);
     body.appendChild(fl);
 
@@ -258,7 +271,11 @@ dash.draw('calendar', (el) => {
             const kd = KIND[r.kind] || { c: 'var(--color-fg-muted)', dash: true };
             const c = mk('button', 'chip' + (kd.dash ? ' dash' : '') + (picked && picked.base === r.base ? ' hl' : ''), r.kind === 'claim' ? r.label : r.job + ' · ' + r.label);
             c.type = 'button';
-            c.style.setProperty('--k', kd.c);
+            c.style.setProperty('--k', jobColor(r.base));
+            c.style.setProperty('--kc', kd.c);
+            const crew = crewOf(r);
+            if (crew.length) { c.textContent = ''; c.insertAdjacentHTML('afterbegin', crew.map((n) => faceSVG(n, 16)).join('') + ' '); c.append(r.kind === 'claim' ? r.label : r.job + ' · ' + r.label); }
+            c.insertAdjacentHTML('beforeend', '<i class="kd"></i>');
             c.title = r.job + ': ' + r.label;
             c.onclick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
             cell.appendChild(c);
@@ -286,7 +303,7 @@ dash.draw('calendar', (el) => {
 
     const list = mk('div', 'joblist');
     const addJob = (name, label) => {
-      const b = mk('button', 'jbtn'); b.type = 'button';
+      const b = mk('button', 'jbtn'); b.type = 'button'; b.style.setProperty('--jc', jobColor(name));
       b.setAttribute('aria-pressed', String(ui.sel === name));
       b.append(mk('span', '', name), mk('small', 'muted', label));
       b.onclick = () => { ui.sel = ui.sel === name ? null : name; render(); };
@@ -303,7 +320,7 @@ dash.draw('calendar', (el) => {
     if (ui.sel) {
       const isWipOnly = wipOnly.some((w) => w.job === ui.sel);
       const ents = items.filter((r) => r.kind !== 'claim' && (r.base === ui.sel || (isWipOnly && same(r.base, ui.sel)))).sort((x, y) => x.s - y.s);
-      det.style.setProperty('--k', ents[0] ? (KIND[ents[0].kind] || {}).c : 'var(--color-border-line)');
+      det.style.setProperty('--k', jobColor(ui.sel));
       det.appendChild(mk('strong', '', ui.sel));
       if (ents.length) {
         det.appendChild(mk('span', 'muted', 'What we are doing on this job'));
@@ -314,6 +331,17 @@ dash.draw('calendar', (el) => {
             mk('span', '', ' ' + r.label + ', ' + range(r) + '. ' + r.note));
           det.appendChild(line);
         });
+        const sp = schedulePos(ents, today0, isWork);
+        const crew = [...new Set(sp.active.flatMap(crewOf))];
+        const sh = (ok('stage_hours') || []).find((x) => same(x.job, ui.sel));
+        const hrs = sh ? [sh.rough_h, sh.fit_h, '', sh.comm_h].map((v) => (+v ? +v : '')) : null;
+        const cr = mk('div', 'crewrow');
+        if (crew.length) { cr.appendChild(mk('span', 'muted', 'On this job now:')); crew.forEach((n) => { const sp1 = mk('span', 'pill'); sp1.insertAdjacentHTML('afterbegin', faceSVG(n, 22) + ' ' + n); cr.appendChild(sp1); }); }
+        else cr.appendChild(mk('span', 'muted', 'No crew named on the roster for this job.'));
+        det.appendChild(cr);
+        const th = mk('div', 'trackwrap'); det.appendChild(th);
+        buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches, aria: ui.sel + ' schedule position' });
+        det.appendChild(mk('span', 'muted', 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.'));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
       }

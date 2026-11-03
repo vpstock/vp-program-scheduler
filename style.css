@@ -108,3 +108,43 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .jbtn:hover{border-color:#0b4fd4}
 .psp .jbtn[aria-pressed="true"]{border-color:#0b4fd4;background:var(--color-panel);outline:2px solid #0b4fd4;outline-offset:-1px}
 .psp .jline{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+
+/* Crew faces, job colours and the HVAC progress track */
+.psp .face{display:inline-block;vertical-align:middle;flex:none}
+.psp .crewbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.psp .crewbar .cb{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:var(--cds-font-size-caption);color:inherit;background:var(--color-bg);border:1px solid var(--color-border-line);border-radius:99px;padding:2px 12px 2px 3px;cursor:pointer}
+.psp .crewbar .cb:hover{border-color:#0b4fd4}
+.psp .crewbar .cb[aria-pressed="true"]{border-color:#0b4fd4;background:#eef3ff;outline:2px solid #0b4fd4;outline-offset:-1px}
+.psp .chip .face{margin-right:2px;vertical-align:-3px}
+.psp .chip .kd{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--kc);margin-left:4px;vertical-align:middle}
+.psp button.chip{background:color-mix(in srgb,var(--k) 12%,transparent)}
+.psp .jbtn{border-left:5px solid var(--jc,var(--color-border-line))}
+.psp .jbtn span{display:flex;align-items:center;gap:6px}
+.psp .crewrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.psp .trackwrap{margin-top:6px}
+.psp svg.track{width:100%;height:auto;display:block;overflow:visible}
+.psp svg.track .zl{font:600 12px 'Public Sans',Arial,sans-serif;fill:#0a1a4d}
+.psp svg.track .wn{font:600 11px 'Public Sans',Arial,sans-serif;fill:#14181e;paint-order:stroke;stroke:#eaf2ff;stroke-width:3px}
+.psp svg.track .zone.todo .art{opacity:.55}
+.psp svg.track .zcur{animation:zp 1.8s ease-in-out infinite}
+.psp svg.track .walker{transition:transform 2s cubic-bezier(.3,.7,.3,1)}
+.psp svg.track .bob{animation:bob 1.6s ease-in-out infinite;transform-box:fill-box}
+.psp svg.track .walking .bob{animation:hop .35s ease-in-out infinite}
+.psp svg.track .walking .l1{animation:leg .35s ease-in-out infinite alternate}
+.psp svg.track .walking .l2{animation:leg .35s ease-in-out infinite alternate-reverse}
+.psp svg.track .fan{animation:spin 1.2s linear infinite;transform-box:fill-box;transform-origin:center}
+.psp svg.track .saw{animation:spin 2.4s linear infinite;transform-box:fill-box;transform-origin:center}
+.psp svg.track .needle{animation:gauge 2.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box;transform-origin:0% 100%}
+.psp svg.track .air{animation:air 1.4s ease-in-out infinite}
+.psp svg.track .flow{animation:flow 1.2s linear infinite}
+.psp svg.track .flag{transform-box:fill-box;transform-origin:left center;animation:wave 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-2px)}}
+@keyframes hop{50%{transform:translateY(-6px)}}
+@keyframes leg{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes gauge{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(26deg)}}
+@keyframes air{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes flow{to{transform:translateX(34px)}}
+@keyframes wave{50%{transform:scaleX(.82)}}
+@keyframes zp{50%{fill-opacity:.2}}
+@media (prefers-reduced-motion:reduce){.psp svg.track *{animation:none!important;transition:none!important}}
