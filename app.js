@@ -340,14 +340,23 @@ dash.draw('calendar', (el) => {
         else cr.appendChild(mk('span', 'muted', 'No crew named on the roster for this job.'));
         det.appendChild(cr);
         const msAll = ok('milestones') || [];
-        const svItems = msAll.filter((x) => /anytime/i.test(x.job) && /^survey:/i.test(x.milestone) && /anytime/i.test(ui.sel)).map((x) => ({ label: String(x.milestone).replace(/^survey:\s*/i, ''), status: x.status }));
-        if (svItems.length) {
+        const jobMs = msAll.filter((x) => same(x.job, ui.sel) || (/anytime/i.test(x.job) && /anytime/i.test(ui.sel)));
+        const sv = jobMs.filter((x) => /^survey:/i.test(x.milestone)).map((x) => ({ label: String(x.milestone).replace(/^survey:\s*/i, ''), status: x.status }));
+        const tk = jobMs.filter((x) => /^task:/i.test(x.milestone)).map((x) => ({ label: String(x.milestone).replace(/^task:\s*/i, ''), status: x.status }));
+        const rcReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const asOf = (rows) => rows.map((x) => x.as_of).filter(Boolean).sort().pop();
+        if (sv.length) {
           det.appendChild(mk('span', 'muted', 'Site survey'));
           const sw = mk('div', 'trackwrap'); det.appendChild(sw);
-          buildSurveyTrack(sw, { items: svItems, walkers: crewOf({ label: 'Urv', note: '' }), color: jobColor(ui.sel), reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches, aria: ui.sel + ' survey progress' });
-          const asof = msAll.filter((x) => /anytime/i.test(x.job)).map((x) => x.as_of).filter(Boolean).sort().pop();
-          det.appendChild(mk('span', 'muted', 'Ticks come from the daily site recap and job channel posts' + (asof ? ' (last updated ' + asof + ')' : '') + '. The survey is not finished: the rest needs a day for Urv, which is not booked yet.'));
+          buildSurveyTrack(sw, { items: sv, walkers: crewOf({ label: 'Urv', note: '' }), color: jobColor(ui.sel), reduce: rcReduce, aria: ui.sel + ' survey progress' });
+          det.appendChild(mk('span', 'muted', 'Ticks come from the job channel posts and the daily site recap (last updated ' + (asOf(jobMs.filter((x) => /^survey:/i.test(x.milestone))) || '') + '). The survey is not finished: the rest needs a day for Urv, which is not booked yet.'));
           det.appendChild(mk('span', 'muted', 'Install: not started. The crew are expected on site in 2 to 3 weeks, once the survey is finished.'));
+        }
+        if (tk.length) {
+          det.appendChild(mk('span', 'muted', 'Site progress from the job channel'));
+          const tw = mk('div', 'trackwrap'); det.appendChild(tw);
+          buildSurveyTrack(tw, { items: tk, walkers: crew, color: jobColor(ui.sel), reduce: rcReduce, aria: ui.sel + ' site progress', unit: 'items' });
+          det.appendChild(mk('span', 'muted', 'From the Slack job channel posts (last updated ' + (asOf(jobMs.filter((x) => /^task:/i.test(x.milestone))) || '') + '). A ring with a number means still to do; orange means part done.'));
         }
         const th = mk('div', 'trackwrap'); det.appendChild(th);
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
