@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103i. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103j. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -733,7 +733,8 @@ dash.draw('calendar', (el) => {
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
         const isLC = /459 Little Collins/i.test(ui.sel);
-        const isSmall = !isFire && !isLC && !!sh && (+sh.demo_h || 0) + (+sh.rough_h || 0) + (+sh.fit_h || 0) + (+sh.comm_h || 0) === 0 && (+sh.unsplit_h || 0) > 0 && (+sh.unsplit_h || 0) <= 40;
+        const isCondRep = /368 smith/i.test(ui.sel);
+        const isSmall = isCondRep || (!isFire && !isLC && !!sh && (+sh.demo_h || 0) + (+sh.rough_h || 0) + (+sh.fit_h || 0) + (+sh.comm_h || 0) === 0 && (+sh.unsplit_h || 0) > 0 && (+sh.unsplit_h || 0) <= 40);
         if (isLC) {
           // 459 Little Collins St: Levels 3, 4, 8, 9, 10 and 11, then commissioning
           const ms = (ok('milestones') || []).filter((x) => /459/i.test(x.job));
@@ -748,7 +749,7 @@ dash.draw('calendar', (el) => {
           const rs = ents.filter((r) => r.kind !== 'program');
           let tot = 0, dn = 0;
           rs.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x) || isoD(r.s) === isoD(r.e)) { tot++; if (x < today0) dn++; } });
-          det.appendChild(mk('span', 'muted', 'Small job, so there are no rough-in, fit-off or commissioning stages. ' + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
+          det.appendChild(mk('span', 'muted', (isCondRep ? 'Scope: condition report and airflow testing, one day. There are no rough-in, fit-off or commissioning stages. ' : 'Small job, so there are no rough-in, fit-off or commissioning stages. ') + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
           if (tot) { const db = mk('div', 'daybar'); const df = document.createElement('i'); df.style.width = Math.round(dn / tot * 100) + '%'; df.style.background = jobColor(ui.sel); db.appendChild(df); det.appendChild(db); }
         } else
         if (isFire) {
