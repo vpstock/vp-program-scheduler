@@ -1,0 +1,306 @@
+
+
+const dash = {
+  colors: ['#0b4fd4', '#12aef4', '#0a1a4d', '#6b7688', '#1a7f4b', '#b45309', '#7a4fd4', '#c0392b'],
+  _d: {}, _c: {}, _dr: {}, _ids: [], _asof: null,
+  calc(id, o) { this._c[id] = o; },
+  draw(name, fn) { this._dr[name] = fn; },
+  data(id) {
+    const c = this._c[id];
+    if (c) {
+      const ins = c.inputs.map((i) => this.data(i));
+      return ins.every((x) => x.status === 'ok') ? { status: 'ok', data: c.fn(...ins.map((x) => x.data)) } : { status: 'loading', data: [] };
+    }
+    return this._d[id] ? { status: 'ok', data: this._d[id] } : { status: 'loading', data: [] };
+  },
+  async load() {
+    await Promise.all(this._ids.map(async (id) => {
+      const r = await fetch('data/' + id + '.csv?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error(id + ' ' + r.status);
+      const lm = r.headers.get('last-modified');
+      if (lm && (!this._asof || new Date(lm) > this._asof)) this._asof = new Date(lm);
+      this._d[id] = d3.csvParse(await r.text());
+    }));
+  },
+  paint() {
+    document.querySelectorAll('[data-draw]').forEach((el) => { const f = this._dr[el.dataset.draw]; if (f) f(el); });
+    const a = document.getElementById('asof');
+    if (a && this._asof) a.textContent = 'Data last updated ' + d3.timeFormat('%a %-d %b %Y, %-I:%M %p')(this._asof) + '.';
+  },
+  async start(ids) {
+    this._ids = ids;
+    try { await this.load(); this.paint(); } catch (e) { document.getElementById('dash-root').insertAdjacentHTML('afterbegin', '<p style="color:var(--color-bad)">Could not load the data files: ' + e.message + '</p>'); }
+    setInterval(async () => { try { await this.load(); this.paint(); } catch (e) {} }, 5 * 60 * 1000);
+  }
+};
+
+
+
+
+const num = (x) => { const n = Number(x); return Number.isFinite(n) && String(x).trim() !== '' ? n : null; };
+const days = (h, crew, dh) => (h && h > 0) ? Math.ceil(h / (crew * dh)) : null;
+
+dash.calc('stage_days', {
+  title: 'Stage hours and days',
+  description: 'Simpro hours per stage, with days worked out as hours divided by crew size and hours per day, rounded up.',
+  inputs: ['stage_hours'],
+  fn: (stage_hours) => stage_hours.map((r) => {
+    const crew = Number(r.crew), dh = Number(r.day_h);
+    const n = (x) => (String(x).trim() === '' ? null : Number(x));
+    const d = (h) => (h && h > 0) ? Math.ceil(h / (crew * dh)) : null;
+    return {
+      job: r.job, simpro: r.simpro, basis: r.basis,
+      demo_h: n(r.demo_h) || null, rough_h: n(r.rough_h) || null, rough_d: d(n(r.rough_h)),
+      fit_h: n(r.fit_h) || null, fit_d: d(n(r.fit_h)),
+      comm_h: n(r.comm_h) || null, comm_d: d(n(r.comm_h)),
+      unsplit_h: n(r.unsplit_h) || null, used_h: n(r.used_h) || null
+    };
+  })
+});
+
+dash.calc('summary', {
+  title: 'Program summary',
+  description: 'Counts of jobs with hours and programs, and total Simpro hours.',
+  inputs: ['stage_hours', 'programs'],
+  fn: (stage_hours, programs) => {
+    const hrs = (r) => ['demo_h','rough_h','fit_h','comm_h','unsplit_h'].reduce((a, k) => a + (Number(r[k]) || 0), 0);
+    const withHours = stage_hours.filter((r) => hrs(r) > 0);
+    const found = programs.filter((r) => r.status.startsWith('Found')).length;
+    const none = programs.filter((r) => r.status === 'None found').length;
+    return [{ jobs: withHours.length, hours: Math.round(withHours.reduce((a, r) => a + hrs(r), 0)), found, missing: none }];
+  }
+});
+
+const ok = (id) => { const g = dash.data(id); return g.status === 'ok' ? g.data : null; };
+const fmt = (v) => (v === null || v === undefined || v === '') ? '—' : (typeof v === 'number' ? d3.format(',')(v) : String(v));
+
+dash.draw('kpi', (el) => {
+  const rows = ok('summary');
+  el.textContent = rows && rows.length ? fmt(rows[0][el.dataset.field]) : '—';
+});
+
+function fillTable(tbody, rows, cols, numeric) {
+  tbody.replaceChildren();
+  if (!rows) return;
+  rows.forEach((r) => {
+    const tr = document.createElement('tr');
+    cols.forEach((c) => {
+      const td = document.createElement('td');
+      if (numeric.includes(c)) td.className = 'n';
+      td.textContent = fmt(r[c]);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+dash.draw('stagetable', (tb) => fillTable(tb, ok('stage_days'),
+  ['job','simpro','demo_h','rough_h','rough_d','fit_h','fit_d','comm_h','comm_d','unsplit_h','used_h','basis'],
+  ['demo_h','rough_h','rough_d','fit_h','fit_d','comm_h','comm_d','unsplit_h','used_h']));
+dash.draw('programtable', (tb) => fillTable(tb, ok('programs'),
+  ['job','status','rough_in','fit_off','cut_out','commissioning','program_start','program_finish'], []));
+dash.draw('guidetable', (tb) => fillTable(tb, ok('guideline'), ['item','demo_h','rough_h','fit_h','comm_h'], ['demo_h','rough_h','fit_h','comm_h']));
+dash.draw('crewtable', (tb) => fillTable(tb, ok('crew'), ['name','role','current_work'], []));
+
+dash.draw('stagebars', (el) => {
+  const rows = ok('stage_days');
+  if (!rows) { el.textContent = '—'; return; }
+  const split = rows.filter((r) => (r.rough_d || 0) + (r.fit_d || 0) + (r.comm_d || 0) > 0);
+  const max = d3.max(split, (r) => (r.rough_d || 0) + (r.fit_d || 0) + (r.comm_d || 0)) || 1;
+  const cols = [dash.colors[0], dash.colors[1], dash.colors[2]];
+  el.replaceChildren();
+  split.forEach((r) => {
+    const parts = [r.rough_d || 0, r.fit_d || 0, r.comm_d || 0];
+    const total = parts.reduce((a, b) => a + b, 0);
+    const row = document.createElement('div'); row.className = 'brow';
+    const name = document.createElement('span'); name.textContent = r.job;
+    const track = document.createElement('div'); track.className = 'btrack';
+    track.style.width = (total / max * 100) + '%';
+    parts.forEach((p, i) => {
+      if (!p) return;
+      const seg = document.createElement('i');
+      seg.style.flex = p + ' 0 0'; seg.style.background = cols[i];
+      seg.title = ['Rough-in', 'Fit-off', 'Commissioning'][i] + ': ' + p + ' days';
+      track.appendChild(seg);
+    });
+    const tot = document.createElement('span'); tot.className = 'muted'; tot.textContent = total + ' days';
+    row.append(name, track, tot);
+    el.appendChild(row);
+  });
+});
+
+const parseD = (s) => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const isoD = d3.timeFormat('%Y-%m-%d');
+const longD = d3.timeFormat('%a %-d %b %Y');
+const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29'];
+const isWork = (d) => d.getDay() !== 0 && d.getDay() !== 6 && !HOL.includes(isoD(d));
+const finishFor = (start, n) => {
+  let d = parseD(start), c = 0;
+  for (let i = 0; i < 400; i++) {
+    if (isWork(d)) { c++; if (c === n) return d; }
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+  }
+  return null;
+};
+
+dash.calc('fantech_sched', {
+  title: 'Fantech fire station schedule',
+  description: 'Finish by the bay rule (3 days for 1 bay, plus 2 days for each extra bay, working days, Victorian public holidays skipped) compared with the schedule finish.',
+  inputs: ['fantech'],
+  fn: (fantech) => fantech.map((r) => {
+    const bays = Number(r.bays), n = 2 * bays + 1;
+    const f = finishFor(r.start, n);
+    const given = r.finish_given ? parseD(r.finish_given) : null;
+    let check = r.status === 'Done' ? 'Done' : 'No finish on schedule';
+    if (given && r.status !== 'Done') check = isoD(given) === isoD(f) ? 'Matches the rule' : 'Differs: schedule is ' + (given > f ? 'later' : 'earlier') + ' than the rule';
+    return { station: r.station, name: r.name, district: r.district, bays, days: n,
+      start: longD(parseD(r.start)), finish_rule: longD(f), finish_given: given ? longD(given) : '', status: r.status || '', check };
+  })
+});
+
+
+dash.draw('wiptable', (tb) => fillTable(tb, ok('wip_nov'), ['job_no','job','builder','this_month','claim_day','dates'], []));
+dash.draw('fantechtable', (tb) => fillTable(tb, ok('fantech_sched'), ['station','name','district','bays','days','start','finish_rule','finish_given','status','check'], ['bays','days']));
+
+const KIND = {
+  program: { name: 'Builder program', c: '#0b4fd4' },
+  fantech: { name: 'Fantech fire station', c: '#12aef4' },
+  proposed: { name: 'Proposed from Simpro hours', c: 'var(--color-fg-muted)', dash: true },
+  pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true },
+  claim: { name: 'Progress claim', c: 'var(--color-ok)' }
+};
+const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
+const ui = { m: null, kinds: new Set(Object.keys(KIND)), job: 'all', pick: null };
+const baseJob = (j) => String(j).replace(/ L\d+$/, '');
+const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const shortD = d3.timeFormat('%a %-d %b');
+
+dash.draw('calendar', (el) => {
+  const ev = ok('cal_events');
+  if (!ev) { el.textContent = '—'; return; }
+  const items = ev.map((r, i) => ({ ...r, i, s: parseD(r.start), e: parseD(r.end), base: baseJob(r.job) }));
+  if (ui.m === null) {
+    const now = new Date();
+    const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
+    ui.m = idx >= 0 ? idx : 0;
+  }
+  const vis = (r) => ui.kinds.has(r.kind) && (ui.job === 'all' || r.base === ui.job);
+  const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
+
+  function render() {
+    el.replaceChildren();
+
+    ui.m = window.PAGE_MONTH;
+    const [yy, mm] = MONTHS[ui.m];
+    const mStart = new Date(yy, mm, 1), mEnd = new Date(yy, mm + 1, 0);
+
+    const body = mk('div', 'fade'); body.style.cssText = 'display:flex;flex-direction:column;gap:var(--cds-gap-md);padding-top:var(--cds-gap-md)';
+    el.appendChild(body);
+
+    // Filters
+    const fl = mk('div', 'filters');
+    Object.entries(KIND).forEach(([k, v]) => {
+      const b = mk('button', 'fbtn', v.name); b.type = 'button';
+      b.style.setProperty('--k', v.c);
+      b.setAttribute('aria-pressed', String(ui.kinds.has(k)));
+      b.onclick = () => { ui.kinds.has(k) ? ui.kinds.delete(k) : ui.kinds.add(k); ui.pick = null; render(); };
+      fl.appendChild(b);
+    });
+    const sel = mk('select'); sel.setAttribute('aria-label', 'Filter by job');
+    const jobs = [...new Set(items.filter((r) => r.kind !== 'claim').map((r) => r.base))].sort();
+    [['all', 'All jobs'], ...jobs.map((j) => [j, j])].forEach(([v, t]) => { const o = mk('option', '', t); o.value = v; if (v === ui.job) o.selected = true; sel.appendChild(o); });
+    sel.onchange = () => { ui.job = sel.value; ui.pick = null; render(); };
+    const clr = mk('button', 'clr', 'Reset'); clr.type = 'button';
+    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.pick = null; render(); };
+    fl.append(sel, clr);
+    body.appendChild(fl);
+
+    // Month summary
+    const mItems = items.filter((r) => inMonth(r, ui.m) && vis(r));
+    const fsDays = mItems.filter((r) => r.kind === 'fantech').reduce((a, r) => {
+      let n = 0;
+      for (let d = new Date(Math.max(r.s, mStart)); d <= Math.min(r.e, mEnd); d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) if (isWork(d)) n++;
+      return a + n;
+    }, 0);
+    const kp = mk('div', 'kpis');
+    [['Jobs on the calendar', new Set(mItems.filter((r) => r.kind !== 'claim').map((r) => r.base)).size],
+     ['Fire station days', fsDays],
+     ['Proposed entries', mItems.filter((r) => r.kind === 'proposed').length],
+     ['Progress claim days', mItems.filter((r) => r.kind === 'claim').length]].forEach(([l, v]) => {
+      const k = mk('div', 'kpi'); k.append(mk('span', 'muted', l), mk('b', '', String(v))); kp.appendChild(k);
+    });
+    body.appendChild(kp);
+
+    // Grid
+    const picked = ui.pick === null ? null : items[ui.pick];
+    const wrap = mk('div', 'scroll');
+    const cal = mk('div', 'cal' + (picked ? ' picked' : ''));
+    const head = mk('div', 'calrow calhead');
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((n) => head.appendChild(mk('span', '', n)));
+    cal.appendChild(head);
+    const first = new Date(yy, mm, 1);
+    let day = new Date(yy, mm, 1 - ((first.getDay() + 6) % 7));
+    const todayIso = isoD(new Date());
+    while (day < new Date(yy, mm + 1, 1)) {
+      const row = mk('div', 'calrow');
+      for (let i = 0; i < 7; i++) {
+        const inM = day.getMonth() === mm;
+        const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
+        cell.appendChild(mk('span', 'dn', String(day.getDate())));
+        if (inM && HOL.includes(isoD(day))) cell.appendChild(mk('span', 'hol', 'Public holiday'));
+        if (inM) {
+          items.filter(vis).forEach((r) => {
+            if (day < r.s || day > r.e) return;
+            const single = isoD(r.s) === isoD(r.e);
+            if (!single && !isWork(day)) return;
+            const kd = KIND[r.kind] || { c: 'var(--color-fg-muted)', dash: true };
+            const c = mk('button', 'chip' + (kd.dash ? ' dash' : '') + (picked && picked.base === r.base ? ' hl' : ''), r.kind === 'claim' ? r.label : r.job + ' · ' + r.label);
+            c.type = 'button';
+            c.style.setProperty('--k', kd.c);
+            c.title = r.job + ': ' + r.label;
+            c.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
+            cell.appendChild(c);
+          });
+        }
+        row.appendChild(cell);
+        day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+      }
+      cal.appendChild(row);
+    }
+    wrap.appendChild(cal); body.appendChild(wrap);
+
+    // Detail
+    const det = mk('div', 'detail');
+    if (picked) {
+      det.style.setProperty('--k', (KIND[picked.kind] || {}).c || 'var(--color-border-line)');
+      det.append(mk('strong', '', picked.job + ': ' + picked.label),
+        mk('span', '', isoD(picked.s) === isoD(picked.e) ? shortD(picked.s) : shortD(picked.s) + ' to ' + shortD(picked.e)),
+        mk('span', 'muted', (KIND[picked.kind] || {}).name || picked.kind),
+        mk('span', '', picked.note));
+      const others = items.filter((r) => r.base === picked.base && r.i !== picked.i && r.kind !== 'claim');
+      if (others.length) det.appendChild(mk('span', 'muted', 'Other dates for this job: ' + others.map((r) => r.label + ' ' + shortD(r.s)).join('; ')));
+    } else {
+      det.appendChild(mk('span', 'muted', 'Click a box in the calendar, or a row below, to see the detail and every date for that job.'));
+    }
+    body.appendChild(det);
+
+    // Agenda
+    const sc = mk('div', 'scroll');
+    const tb = mk('table');
+    const thd = mk('thead'); const hr = mk('tr');
+    ['Job', 'What', 'From', 'To', 'Type'].forEach((t) => hr.appendChild(mk('th', '', t)));
+    thd.appendChild(hr); tb.appendChild(thd);
+    const tbody = mk('tbody');
+    mItems.slice().sort((a, b) => a.s - b.s || a.job.localeCompare(b.job)).forEach((r) => {
+      const tr = mk('tr', 'click' + (ui.pick === r.i ? ' pick' : ''));
+      [r.job, r.label, shortD(r.s), shortD(r.e), (KIND[r.kind] || {}).name || r.kind].forEach((t) => tr.appendChild(mk('td', '', t)));
+      tr.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
+      tbody.appendChild(tr);
+    });
+    if (!mItems.length) { const tr = mk('tr'); const td = mk('td', '', 'Nothing matches these filters for this month.'); td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr); }
+    tb.appendChild(tbody); sc.appendChild(tb); body.appendChild(sc);
+  }
+  render();
+});
+
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov']);
