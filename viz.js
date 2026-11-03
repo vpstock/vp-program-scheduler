@@ -314,4 +314,33 @@
     host.innerHTML = s;
     animate(host, Object.assign({}, o, { gy: 170 }));
   };
+  // Survey track: a checklist of survey items (from data/milestones.csv), Urv stands at the done/total mark
+  window.buildSurveyTrack = function (host, o) {
+    // o: {items:[{label,status}], walkers, color, reduce, aria}
+    const I = o.items, n = I.length, per = Math.ceil(n / 2), CW = 132, CH = 76, X = 20, W = X * 2 + per * CW;
+    const wrap = (t, m) => { const w = String(t).split(' '), L = []; let c = ''; w.forEach((x) => { if ((c + ' ' + x).trim().length > m) { L.push(c); c = x; } else c = (c + ' ' + x).trim(); }); if (c) L.push(c); return L.slice(0, 3); };
+    const done = I.filter((x) => /done/i.test(x.status)).length;
+    const H = 14 + 2 * (CH + 8) + 150;
+    let s = '<svg class="track" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (o.aria || 'Survey progress') + '">' +
+      '<defs><pattern id="bp4" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#c9daf8" stroke-width="1"/></pattern></defs>' +
+      '<rect width="' + W + '" height="' + H + '" rx="10" fill="#eaf2ff"/><rect width="' + W + '" height="' + H + '" rx="10" fill="url(#bp4)"/>';
+    I.forEach((it, i) => {
+      const r = Math.floor(i / per), c = i % per, x = X + c * CW, y = 14 + r * (CH + 8);
+      const dn = /done/i.test(it.status), dg = /doing|part/i.test(it.status);
+      s += '<rect x="' + (x + 3) + '" y="' + y + '" width="' + (CW - 6) + '" height="' + CH + '" rx="8" fill="' + (dn ? o.color : '#fff') + '" fill-opacity="' + (dn ? .14 : .6) + '" stroke="' + (dn ? o.color : '#9fb3d6') + '" stroke-width="1.5"' + (dn ? '' : ' stroke-dasharray="4 3"') + '/>';
+      s += '<circle cx="' + (x + 18) + '" cy="' + (y + 18) + '" r="9" fill="' + (dn ? '#2b9348' : dg ? '#f08c00' : '#fff') + '" stroke="' + (dn ? '#2b9348' : dg ? '#f08c00' : '#9fb3d6') + '" stroke-width="1.5"/>';
+      if (dn) s += '<path d="M' + (x + 13.5) + ' ' + (y + 18.5) + 'L' + (x + 17) + ' ' + (y + 22) + 'L' + (x + 23) + ' ' + (y + 14.5) + '" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+      else s += '<text x="' + (x + 18) + '" y="' + (y + 22) + '" text-anchor="middle" style="font:700 11px Public Sans,Arial,sans-serif;fill:' + (dg ? '#fff' : '#6b7688') + '">' + (i + 1) + '</text>';
+      s += '<text x="' + (x + 34) + '" y="' + (y + 22) + '" style="font:600 10px Public Sans,Arial,sans-serif;fill:' + (dn ? '#1b6b32' : '#6b7688') + '">' + (dn ? 'Done' : dg ? 'Part done' : 'To do') + '</text>';
+      wrap(it.label, 21).forEach((ln, k) => { s += '<text x="' + (x + 12) + '" y="' + (y + 42 + k * 12) + '" style="font:500 10.5px Public Sans,Arial,sans-serif;fill:#14181e;opacity:' + (dn ? 1 : .85) + '">' + ln.replace(/&/g, '&amp;') + '</text>'; });
+    });
+    const py = 14 + 2 * (CH + 8) + 104, bw = W - X * 2, px = X + bw * (n ? done / n : 0);
+    s += '<rect x="' + X + '" y="' + py + '" width="' + bw + '" height="14" rx="3" fill="#dfe6f1" stroke="#0a1a4d" stroke-width="2"/>' +
+      '<clipPath id="pc4"><rect x="' + X + '" y="' + py + '" width="' + Math.max(0, px - X) + '" height="14"/></clipPath><rect x="' + X + '" y="' + py + '" width="' + bw + '" height="14" rx="3" fill="' + o.color + '" clip-path="url(#pc4)"/><rect x="' + X + '" y="' + py + '" width="' + bw + '" height="14" rx="3" fill="none" stroke="#0a1a4d" stroke-width="2"/>' +
+      '<text x="' + (W - X) + '" y="' + (py + 34) + '" text-anchor="end" style="font:600 11px Public Sans,Arial,sans-serif;fill:#33406a">' + done + ' of ' + n + ' survey items done</text>';
+    s += walkersSvg(Object.assign({}, o, { noNames: true, gy: py }), W, Math.max(X + 16, Math.min(W - 40, px)), 0);
+    s += '</svg>';
+    host.innerHTML = s;
+    animate(host, Object.assign({}, o, { gy: py }));
+  };
 })();

@@ -339,6 +339,16 @@ dash.draw('calendar', (el) => {
         if (crew.length) { cr.appendChild(mk('span', 'muted', 'On this job now:')); crew.forEach((n) => { const sp1 = mk('span', 'pill'); sp1.insertAdjacentHTML('afterbegin', faceSVG(n, 22) + ' ' + n); cr.appendChild(sp1); }); }
         else cr.appendChild(mk('span', 'muted', 'No crew named on the roster for this job.'));
         det.appendChild(cr);
+        const msAll = ok('milestones') || [];
+        const svItems = msAll.filter((x) => /anytime/i.test(x.job) && /^survey:/i.test(x.milestone) && /anytime/i.test(ui.sel)).map((x) => ({ label: String(x.milestone).replace(/^survey:\s*/i, ''), status: x.status }));
+        if (svItems.length) {
+          det.appendChild(mk('span', 'muted', 'Site survey'));
+          const sw = mk('div', 'trackwrap'); det.appendChild(sw);
+          buildSurveyTrack(sw, { items: svItems, walkers: crewOf({ label: 'Urv', note: '' }), color: jobColor(ui.sel), reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches, aria: ui.sel + ' survey progress' });
+          const asof = msAll.filter((x) => /anytime/i.test(x.job)).map((x) => x.as_of).filter(Boolean).sort().pop();
+          det.appendChild(mk('span', 'muted', 'Ticks come from the daily site recap and job channel posts' + (asof ? ' (last updated ' + asof + ')' : '') + '. The survey is not finished: the rest needs a day for Urv, which is not booked yet.'));
+          det.appendChild(mk('span', 'muted', 'Install: not started. The crew are expected on site in 2 to 3 weeks, once the survey is finished.'));
+        }
         const th = mk('div', 'trackwrap'); det.appendChild(th);
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
@@ -366,7 +376,7 @@ dash.draw('calendar', (el) => {
           const todayWork = ents.some((r) => r.s <= today0 && today0 <= r.e) && isWork(today0);
           buildFireTrack(th, { bays, days: Math.max(days, 1), dayNo: Math.min(days, done + (todayWork ? 0.5 : 0)), walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' fire station progress', unit: hasFt ? 'Day' : 'Rostered day' });
         } else
-        buildTrack(th, { pos: sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
+        buildTrack(th, { pos: /anytime/i.test(ui.sel) ? 0 : sp.pos, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
         det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. It is not a site progress report.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
