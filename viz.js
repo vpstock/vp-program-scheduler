@@ -17,7 +17,10 @@
     Kei:   { full: 'Kei', bg: '#e3f6ee', skin: '#f0c8a0', shirt: '#0a1a4d', hair: '<path d="M10.5 17Q10.5 9 20 9Q29.5 9 29.5 17Q27 12 20 12Q14 12 10.5 17Z" fill="#6b4423"/><path d="M9.5 14Q9.5 3.5 20 3.5Q30.5 3.5 30.5 14Z" fill="#f1f3f5" stroke="#ced4da" stroke-width=".6"/><rect x="7.5" y="13" width="25" height="3" rx="1.5" fill="#f1f3f5" stroke="#ced4da" stroke-width=".6"/>' },
     Dan:   { full: 'Dan', bg: '#fff1d6', skin: '#e3b08a', shirt: '#f76707', beard: true, hair: '<path d="M9.5 14Q9.5 3.5 20 3.5Q30.5 3.5 30.5 14Z" fill="#fab005" stroke="#c98a00" stroke-width=".6"/><rect x="7.5" y="13" width="25" height="3" rx="1.5" fill="#fab005" stroke="#c98a00" stroke-width=".6"/>' },
     Tandy: { full: 'Tandy', bg: '#ece7ff', skin: '#f6d5b8', shirt: '#2f9e44', hair: '<path d="M10 14Q10 4.5 20 4.5Q30 4.5 30 14Z" fill="#364fc7"/><rect x="9.5" y="12" width="21" height="4.5" rx="2.2" fill="#4c6ef5"/><circle cx="20" cy="3.5" r="2" fill="#4c6ef5"/>' },
-    'Matt B': { full: 'Matt B', bg: '#e1f5fd', skin: '#d6a279', shirt: '#ffffff', stubble: true, hair: '<path d="M10 14Q10 5.5 20 5.5Q30 5.5 30 14Z" fill="#0b4fd4"/><rect x="17" y="12.2" width="17" height="3" rx="1.5" fill="#0a3fa8"/>' }
+    'Matt B': { full: 'Matt B', bg: '#e1f5fd', skin: '#d6a279', shirt: '#ffffff', stubble: true, hair: '<path d="M10 14Q10 5.5 20 5.5Q30 5.5 30 14Z" fill="#0b4fd4"/><rect x="17" y="12.2" width="17" height="3" rx="1.5" fill="#0a3fa8"/>' },
+    'Dan B': { full: 'Dan B (sparky)', bg: '#e8ecff', skin: '#e8b997', shirt: '#1c7ed6', stubble: true, hair: '<path d="M10 14Q10 5 20 5Q30 5 30 14Q26 10 20 10Q14 10 10 14Z" fill="#3b2a1a"/><path d="M9.5 14Q9.5 3.5 20 3.5Q30.5 3.5 30.5 14Z" fill="#e03131" stroke="#a61e1e" stroke-width=".6"/><rect x="7.5" y="13" width="25" height="3" rx="1.5" fill="#e03131" stroke="#a61e1e" stroke-width=".6"/><path d="M21 4.5L18.5 10H21.5L19.5 14" stroke="#ffd43b" stroke-width="1.4" fill="none" stroke-linejoin="round"/>' },
+    'Labour hire 1': { full: 'Labour hire 1', bg: '#eef0f3', skin: '#c68e64', shirt: '#f59f00', hair: '<path d="M9.5 14Q9.5 3.5 20 3.5Q30.5 3.5 30.5 14Z" fill="#f1f3f5" stroke="#ced4da" stroke-width=".6"/><rect x="7.5" y="13" width="25" height="3" rx="1.5" fill="#f1f3f5" stroke="#ced4da" stroke-width=".6"/>' },
+    'Labour hire 2': { full: 'Labour hire 2', bg: '#eef0f3', skin: '#f1cfae', shirt: '#f59f00', beard: false, hair: '<path d="M10 15Q10.5 7 20 7Q29.5 7 30 15Q25 11 20 11Q15 11 10 15Z" fill="#a0522d"/><path d="M9.5 14Q9.5 3.5 20 3.5Q30.5 3.5 30.5 14Z" fill="#74c0fc" stroke="#4dabf7" stroke-width=".6"/><rect x="7.5" y="13" width="25" height="3" rx="1.5" fill="#74c0fc" stroke="#4dabf7" stroke-width=".6"/>' }
   };
   const GENERIC = { bg: '#e8ecf3', skin: '#c9d1dd', shirt: '#868e96', hair: '' };
   window.CREW = Object.keys(PEOPLE);
@@ -53,14 +56,17 @@
     Kei: '<rect x="18" y="-43" width="15" height="20" rx="2" fill="#14181e" stroke="#adb5bd" stroke-width="1"/><rect x="20" y="-41" width="11" height="15" rx="1" fill="#9fdcff"/><path d="M22 -37H29M22 -33H29M22 -29H27" stroke="#0a4fd4" stroke-width="1.2"/>',
     Dan: '<path d="M21 -25L34 -45" stroke="#868e96" stroke-width="3.4" stroke-linecap="round"/><circle cx="35" cy="-47" r="5.5" fill="none" stroke="#868e96" stroke-width="3.4"/><path d="M33 -52L38 -45" stroke="#e9ecef" stroke-width="3"/>',
     Tandy: '<circle cx="25" cy="-23" r="7.5" fill="#fab005" stroke="#14181e" stroke-width="1.2"/><circle cx="25" cy="-23" r="2.6" fill="#14181e"/><path d="M31 -20H38" stroke="#14181e" stroke-width="2" stroke-linecap="round"/><rect x="36" y="-23" width="4" height="6" rx="1" fill="#14181e"/>',
-    'Matt B': '<rect x="19" y="-37" width="14" height="18" rx="2.5" fill="#f76707" stroke="#14181e" stroke-width="1"/><rect x="21" y="-35" width="10" height="6" rx="1" fill="#d3f9d8"/><circle cx="26" cy="-23" r="3" fill="#14181e"/><path d="M26 -37V-44" stroke="#14181e" stroke-width="2"/>'
+    'Matt B': '<rect x="19" y="-37" width="14" height="18" rx="2.5" fill="#f76707" stroke="#14181e" stroke-width="1"/><rect x="21" y="-35" width="10" height="6" rx="1" fill="#d3f9d8"/><circle cx="26" cy="-23" r="3" fill="#14181e"/><path d="M26 -37V-44" stroke="#14181e" stroke-width="2"/>',
+    'Dan B': '<rect x="19" y="-32" width="9" height="16" rx="2" fill="#ffd43b" stroke="#14181e" stroke-width="1"/><path d="M23.5 -32V-44" stroke="#14181e" stroke-width="2.4" stroke-linecap="round"/><path d="M21 -26L26 -22L21 -20L26 -17" stroke="#14181e" stroke-width="1.3" fill="none"/><path d="M28 -24Q38 -24 36 -14Q34 -6 40 -4" stroke="#e03131" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    'Labour hire 1': '<path d="M22 -24L36 -50" stroke="#8d5524" stroke-width="3.4" stroke-linecap="round"/><path d="M30 -52L42 -50L40 -44L34 -46Z" fill="#868e96" stroke="#14181e" stroke-width="1"/>',
+    'Labour hire 2': '<rect x="19" y="-34" width="18" height="12" rx="2" fill="#c92a2a" stroke="#14181e" stroke-width="1"/><path d="M24 -34V-38H32V-34" stroke="#14181e" stroke-width="2" fill="none"/><rect x="25" y="-29" width="6" height="2" fill="#ffe3e3"/>'
   };
   const GENERIC_TOOL = '<rect x="19" y="-30" width="12" height="8" rx="2" fill="#868e96"/>';
   // Whole figure: boots at y 0, head about 80 up. Left arm swings, right hand holds the tool.
   window.figInner = (name, o) => {
     o = o || {};
     const p = PEOPLE[name] || GENERIC, sk = p.skin, sh = p.shirt;
-    const hv = sh === '#f59f00' || sh === '#f76707';
+    const hv = sh === '#f59f00' || sh === '#f76707' || sh === '#1c7ed6';
     return '<g class="figure">' +
       '<g class="leg l1"><path d="M-5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-10" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
       '<g class="leg l2"><path d="M5.5 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="-0.5" y="-5" width="10.5" height="5.5" rx="2.5" fill="#3b2a1a"/></g>' +
@@ -82,6 +88,8 @@
     if (/\bDan\b(?! B)/.test(t)) out.push('Dan');
     if (/\bTandy\b/.test(t)) out.push('Tandy');
     if (/\bMatt B\b/.test(t)) out.push('Matt B');
+    if (/\bDan B\b|\bDaniel B/.test(t)) out.push('Dan B');
+    if (/labour hire|labourly/i.test(t)) out.push('Labour hire 1', 'Labour hire 2');
     return out;
   };
 
