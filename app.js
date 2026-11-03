@@ -292,7 +292,13 @@ dash.draw('calendar', (el) => {
     const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
     ui.m = idx >= 0 ? idx : 0;
   }
-  const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
+  const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person) || (!r.manual && manual.some((m) => m.person === ui.person && baseJob(m.job) === r.base)));
+  const visK = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job);
+  // Crew added by dragging show as faces on the job's own box for that day, not as a separate box.
+  const hostFor = (base, day) => {
+    const c = items.filter((x) => !x.manual && x.base === base && x.kind !== 'claim' && ['roster', 'fantech', 'program'].includes(x.kind) && x.s <= day && day <= x.e && (isoD(x.s) === isoD(x.e) || isWork(day)) && visK(x));
+    return c.find((x) => x.kind === 'roster') || c.find((x) => x.kind === 'fantech') || c[0] || null;
+  };
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
   const fmtT = (iso) => d3.timeFormat('%a %-d %b, %-I:%M %p')(new Date(iso));
@@ -450,15 +456,18 @@ dash.draw('calendar', (el) => {
             if (day < r.s || day > r.e) return;
             const single = isoD(r.s) === isoD(r.e);
             if (!single && !isWork(day)) return;
+            if (r.manual && hostFor(r.base, day)) return;
+            const extra = (!r.manual && hostFor(r.base, day) === r) ? manual.filter((m) => baseJob(m.job) === r.base && m.date === isoD(day)).map((m) => m.person) : [];
+            if (ui.person && !crewOf(r).includes(ui.person) && !extra.includes(ui.person)) return;
             const kd = KIND[r.kind] || { c: 'var(--color-fg-muted)', dash: true };
             const c = mk('button', 'chip' + (kd.dash ? ' dash' : '') + (picked && picked.base === r.base ? ' hl' : ''), r.kind === 'claim' ? r.label : r.job + ' · ' + r.label);
             c.type = 'button';
             c.style.setProperty('--k', jobColor(r.base));
             c.style.setProperty('--kc', kd.c);
-            const crew = crewOf(r);
+            const crew = [...new Set([...crewOf(r), ...extra])];
             if (crew.length) { c.textContent = ''; c.insertAdjacentHTML('afterbegin', crew.map((n) => faceSVG(n, 16)).join('') + ' '); c.append(r.kind === 'claim' ? r.label : r.job + ' · ' + r.label); }
             c.insertAdjacentHTML('beforeend', '<i class="kd"></i>');
-            c.title = r.job + ': ' + r.label;
+            c.title = r.job + ': ' + r.label + (extra.length ? ' (added on the planner: ' + extra.join(', ') + ')' : '');
             c.onclick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
             if (r.kind !== 'claim') {
               c.draggable = true;
@@ -598,7 +607,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103c. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103d. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
