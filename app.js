@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103n. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103o. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -734,6 +734,7 @@ dash.draw('calendar', (el) => {
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
         const isLC = /459 Little Collins/i.test(ui.sel);
         const isCondRep = /368 smith/i.test(ui.sel);
+        const noSplit = !!sh && /no stage split/i.test(sh.basis || '');
         const isSmall = isCondRep || (!isFire && !isLC && !!sh && (+sh.demo_h || 0) + (+sh.rough_h || 0) + (+sh.fit_h || 0) + (+sh.comm_h || 0) === 0 && (+sh.unsplit_h || 0) > 0 && (+sh.unsplit_h || 0) <= 40);
         if (isLC) {
           // 459 Little Collins St: Levels 3, 4, 8, 9, 10 and 11, then commissioning
@@ -780,7 +781,6 @@ dash.draw('calendar', (el) => {
         const stg = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
         const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));
         let confirmed = 0; while (confirmed < 4 && stDone(stg[confirmed])) confirmed++;
-        const noSplit = !!sh && /no stage split/i.test(sh.basis || '');
         if (noSplit) { th.remove(); det.appendChild(mk('span', 'muted', 'The stage track is not shown because the Simpro hours for this job are not split by rough-in, fit-off or commissioning. Progress is the items above and the hours bar.')); }
         if (!noSplit) buildTrack(th, { plan: hrPlan, confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: posUse, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
         }
