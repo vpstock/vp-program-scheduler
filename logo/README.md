@@ -1,0 +1,1 @@
+Put the supplied logo file here: vp_horizontal_mono-white.svg (from the brand kit, 01 Logo files, Horizontal lockup, Mono white). The home page shows it on the navy banner. Do not retype, stretch or recolour it.
