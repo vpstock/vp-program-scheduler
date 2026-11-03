@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103t. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103u. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -785,7 +785,7 @@ dash.draw('calendar', (el) => {
           const used = +sh.used_h || 0, sched = hrow ? +hrow.sched_h || 0 : 0;
           posUse = toPos(used); hrPlan = sched ? toPos(used + sched) : 0;
         }
-        if (stU.length) {
+        if (stU.length && !/iga/i.test(ui.sel)) {
           // Hours by stage from Simpro: the marker sits in the furthest stage that has hours on it. Earlier stages that are over their
           // estimate show as a running over stretch on the stage the crew have moved into, until the crew say they are complete.
           const SIDX = { 'rough-in': 0, 'fit-off': 1, 'cut-out': 2, 'commissioning': 3 };
@@ -797,9 +797,10 @@ dash.draw('calendar', (el) => {
         const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));
         let confirmed = 0; while (confirmed < 4 && stDone(stg[confirmed])) confirmed++;
         if (noSplit) { th.remove(); if (stU.length) {
-            det.appendChild(mk('span', 'muted', 'Hours by stage in Simpro (' + (stU[0].as_of || '') + '). Rough-in has run over its estimate, so the stage track is not drawn.'));
-            stU.forEach((x) => { const e = +x.est_h || 0, u = +x.used_h || 0, pc = e ? Math.round(u / e * 100) : 0; det.appendChild(mk('span', '', x.stage + ': ' + u + ' of ' + e + ' h (' + pc + '%)' + (u > e ? ', ' + Math.round((u - e) * 100) / 100 + ' h over' : ''))); const sb = mk('div', 'daybar'); const sf = document.createElement('i'); sf.style.width = Math.min(100, pc) + '%'; sf.style.background = pc > 100 ? '#e03131' : '#2b9348'; sb.appendChild(sf); det.appendChild(sb); });
+            det.appendChild(mk('span', 'muted', 'Hours by stage in Simpro (' + (stU[0].as_of || '') + ').'+(stU.some((x)=>+x.used_h>+x.est_h)?' A stage has run over its estimate.':'')+' The stage track is not drawn because Simpro holds this job as one installation block.'));
+            stU.forEach((x) => { const e = +x.est_h || 0, u = +x.used_h || 0, pc = e ? Math.round(u / e * 100) : 0; det.appendChild(mk('span', '', x.stage + ': ' + u + ' of ' + e + ' h (' + pc + '%), ' + (+x.left_h || 0) + ' h left' + (u > e ? ', ' + Math.round((u - e) * 100) / 100 + ' h over' : ''))); const sb = mk('div', 'daybar'); const sf = document.createElement('i'); sf.style.width = Math.min(100, pc) + '%'; sf.style.background = pc > 100 ? '#e03131' : '#2b9348'; sb.appendChild(sf); det.appendChild(sb); });
           } else det.appendChild(mk('span', 'muted', 'The stage track is not shown because the Simpro hours for this job are not split by rough-in, fit-off or commissioning. Progress is the items above and the hours bar.')); }
+        if (!noSplit && stU.length) { det.appendChild(mk('span', 'muted', 'Hours left in Simpro (' + (stU[0].as_of || '') + '):')); stU.forEach((x) => { const e = +x.est_h || 0, u = +x.used_h || 0, l = +x.left_h || 0; det.appendChild(mk('span', '', x.stage + ': ' + u + ' of ' + e + ' h used, ' + l + ' h left' + (u > e ? ' (' + Math.round((u - e) * 100) / 100 + ' h over)' : ''))); }); }
         if (!noSplit) buildTrack(th, { plan: hrPlan, confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: posUse, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
         }
         if (!noSplit) det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. A stage is only ticked once the crew say it is complete. Red stripes show scheduled time running past the end of a stage.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
@@ -818,7 +819,7 @@ dash.draw('calendar', (el) => {
         }
         if (shU && eU > 0) {
           const uU = +shU.used_h || 0, pcU = Math.round(uU / eU * 100);
-          det.appendChild(mk('span', 'muted', 'Estimate from the Simpro job (' + shU.simpro + '): ' + eU + ' h. Hours used to date in Simpro (' + String(shU.basis).replace(/^.*file\s*/i, '').replace(/\s*\(.*/, '') + ', not yet split by stage): ' + uU + ' h (' + pcU + '%), ' + Math.max(0, eU - uU) + ' h left.'));
+          det.appendChild(mk('span', 'muted', 'Estimate from the Simpro job (' + shU.simpro + '): ' + eU + ' h. Hours used to date in Simpro (' + String(shU.basis).replace(/^.*?(file|View)\s*/i, '').replace(/\s*\(.*/, '') + ', not yet split by stage): ' + uU + ' h (' + pcU + '%), ' + Math.max(0, eU - uU) + ' h left.'));
           const hbU = mk('div', 'daybar'); const hfU = document.createElement('i'); hfU.style.width = Math.min(100, pcU) + '%'; hfU.style.background = pcU > 100 ? '#e03131' : '#2b9348'; hbU.appendChild(hfU); det.appendChild(hbU);
         }
       }

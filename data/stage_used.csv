@@ -1,5 +1,8 @@
-job,stage,est_h,used_h,as_of,source
-Monash ICA,Demo works,8,0,2026-11-03,Simpro job 1638 Project Overview (Operations View)
-Monash ICA,Rough-in,128,240.68,2026-11-03,Simpro job 1638 Project Overview (Operations View)
-Monash ICA,Fit-off,60,42.57,2026-11-03,Simpro job 1638 Project Overview (Operations View)
-Monash ICA,Commissioning,4,0,2026-11-03,Simpro job 1638 Project Overview (Operations View)
+job,stage,est_h,used_h,left_h,as_of,source
+Monash ICA,Demo works,8,0,8,2026-11-03,Simpro job 1638 Project Overview Resources (Projected Remaining)
+Monash ICA,Rough-in,128,240.68,0,2026-11-03,Simpro job 1638 Project Overview Resources (Projected Remaining)
+Monash ICA,Fit-off,60,42.57,17.43,2026-11-03,Simpro job 1638 Project Overview Resources (Projected Remaining)
+Monash ICA,Commissioning,4,0,4,2026-11-03,Simpro job 1638 Project Overview Resources (Projected Remaining)
+Swan St IGA,Rough-in,300,216,84,2026-11-03,Simpro job 1672 Project Overview Resources (Projected Remaining)
+Swan St IGA,Fit-off,190,0,190,2026-11-03,Simpro job 1672 Project Overview Resources (Projected Remaining)
+V/Line Ballarat East,Installation,350,256.5,93.5,2026-11-03,Simpro job 1678 Operations View (Forecast Remaining)
