@@ -29,7 +29,8 @@
       JSON.parse(localStorage.getItem('vp-sched-crew-v1') || '[]').forEach((m) => ev.push({ job: m.job, label: 'Crew added: ' + m.person, kind: 'roster', note: m.person, s: parse(m.date), e: parse(m.date), base: m.job }));
     } catch (e) { /* no stored crew moves */ }
     const on = (r, d) => r.s <= d && d <= r.e;
-    const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d));
+    const inBreak = (d) => { const s = iso(d); return s >= '2026-12-23' && s <= '2027-01-05'; };
+    const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d)) && !inBreak(d);
 
     // Overlap alert: the same person on two jobs on the same working day, from today on
     const alertBox = document.getElementById('clashAlert');
@@ -48,7 +49,7 @@
     const board = document.getElementById('todayBoard');
     if (board) {
       board.innerHTML = '';
-      if (!isWork(today)) board.appendChild(el('p', 'banner', HOL.includes(iso(today)) ? 'Public holiday today. Roster is off.' : 'Weekend. Only Saturday work shows below.'));
+      if (!isWork(today)) board.appendChild(el('p', 'banner', inBreak(today) ? 'Christmas break. Back Wed 6 Jan.' : HOL.includes(iso(today)) ? 'Public holiday today. Roster is off.' : 'Weekend. Only Saturday work shows below.'));
       const sat = today.getDay() === 6 || today.getDay() === 0;
       CREW.forEach((n) => {
         const jobs = [...new Set(ev.filter((r) => r.kind !== 'claim' && on(r, today) && crewOf(r).includes(n)).map((r) => r.base))];

@@ -133,7 +133,10 @@ const parseD = (s) => { const [y, m, d] = String(s).split('-').map(Number); retu
 const isoD = d3.timeFormat('%Y-%m-%d');
 const longD = d3.timeFormat('%a %-d %b %Y');
 const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29','2027-06-14'];
-const isWork = (d) => d.getDay() !== 0 && d.getDay() !== 6 && !HOL.includes(isoD(d));
+// Christmas break: office and crew off from Wed 23 Dec 2026, back Wed 6 Jan 2027.
+const inBreak = (d) => { const s = isoD(d); return s >= '2026-12-23' && s <= '2027-01-05'; };
+const offLabel = (d) => (inBreak(d) ? 'Christmas break' : (HOL.includes(isoD(d)) ? 'Public holiday' : ''));
+const isWork = (d) => d.getDay() !== 0 && d.getDay() !== 6 && !HOL.includes(isoD(d)) && !inBreak(d);
 const finishFor = (start, n) => {
   let d = parseD(start), c = 0;
   for (let i = 0; i < 400; i++) {
@@ -450,7 +453,7 @@ dash.draw('calendar', (el) => {
         const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
         cell.appendChild(mk('span', 'dn', String(day.getDate())));
         if (inM && clashDay[isoD(day)]) { cell.classList.add('clash'); cell.appendChild(mk('span', 'clashtag', 'Overlap: ' + clashDay[isoD(day)].map((c) => c.person).join(', '))); }
-        if (inM && HOL.includes(isoD(day))) cell.appendChild(mk('span', 'hol', 'Public holiday'));
+        if (inM && (HOL.includes(isoD(day)) || inBreak(day)) && day.getDay() % 6 !== 0) cell.appendChild(mk('span', 'hol', offLabel(day)));
         if (inM) {
           items.filter(vis).forEach((r) => {
             if (day < r.s || day > r.e) return;
@@ -505,7 +508,7 @@ dash.draw('calendar', (el) => {
 
     // Weekly crew view: who is on which job each day. Crew already on a job (or off) are greyed and locked.
     const offRows = ok('crew_off') || [];
-    const offOn = (p, d) => { const o = offRows.find((x) => x.person === p && x.date === isoD(d)); return o ? o.reason : (HOL.includes(isoD(d)) ? 'Public holiday' : ''); };
+    const offOn = (p, d) => { const o = offRows.find((x) => x.person === p && x.date === isoD(d)); return o ? o.reason : offLabel(d); };
     const PEOPLE_ROWS = ['Urv', 'Kei', 'Dan', 'Tandy', 'Matt B', 'Dan B', 'Jonte'];
     const mondayOf = (d) => addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay() + 6) % 7));
     if (!ui.wk) { const t0 = new Date(); ui.wk = (t0 >= mStart && t0 <= mEnd) ? mondayOf(t0) : mondayOf(mStart); }
@@ -540,7 +543,7 @@ dash.draw('calendar', (el) => {
     };
     wdays.forEach((d) => {
       const col = mk('span', 'wc wj'); const js = jobsOn(d);
-      if (!isWork(d) && !js.length) col.appendChild(mk('i', 'muted', HOL.includes(isoD(d)) ? 'Public holiday' : 'No roster'));
+      if (!isWork(d) && !js.length) col.appendChild(mk('i', 'muted', offLabel(d) || 'No roster'));
       js.forEach((j) => {
         const t = mk('span', 'wjob', j); t.style.setProperty('--jc', jobColor(j)); t.dataset.drop = '1'; t.dataset.base = j; t.dataset.date = isoD(d);
         t.ondragover = (e5) => { if (dragCrew && dragCrew.date === isoD(d)) { e5.preventDefault(); t.classList.add('dropok'); } };
@@ -607,7 +610,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103e. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103f. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
