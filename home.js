@@ -1,5 +1,5 @@
 (function () {
-  const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26'];
+  const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29','2027-06-14'];
   const iso = (d) => d3.timeFormat('%Y-%m-%d')(d);
   const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const base = (j) => String(j).replace(/ L\d+$/, '');
@@ -73,7 +73,7 @@
     }
 
     // Month cards: job counts and the colour dots of the jobs in that month
-    [['cardNov', 2026, 10], ['cardDec', 2026, 11], ['cardJan', 2027, 0]].forEach(([id, y, m]) => {
+    [['cardNov', 2026, 10], ['cardDec', 2026, 11], ['cardJan', 2027, 0], ['cardFebruary', 2027, 1], ['cardMarch', 2027, 2], ['cardApril', 2027, 3], ['cardMay', 2027, 4], ['cardJune', 2027, 5]].forEach(([id, y, m]) => {
       const c = document.getElementById(id); if (!c) return;
       const a = new Date(y, m, 1), z = new Date(y, m + 1, 0);
       const jobs = [...new Set(ev.filter((r) => r.kind !== 'claim' && r.s <= z && r.e >= a).map((r) => r.base))];

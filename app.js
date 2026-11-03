@@ -132,7 +132,7 @@ dash.draw('stagebars', (el) => {
 const parseD = (s) => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
 const isoD = d3.timeFormat('%Y-%m-%d');
 const longD = d3.timeFormat('%a %-d %b %Y');
-const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29'];
+const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29','2027-06-14'];
 const isWork = (d) => d.getDay() !== 0 && d.getDay() !== 6 && !HOL.includes(isoD(d));
 const finishFor = (start, n) => {
   let d = parseD(start), c = 0;
@@ -169,7 +169,7 @@ const KIND = {
   proposed: { name: 'Proposed estimate', c: 'var(--color-fg-muted)', dash: true },
   pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true }
 };
-const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
+const MONTHS = [[2026, 10], [2026, 11], [2027, 0], [2027, 1], [2027, 2], [2027, 3], [2027, 4], [2027, 5]];
 const ui = { person: null, m: null, kinds: new Set(Object.keys(KIND)), job: 'all', sel: null };
 const baseJob = (j) => String(j).replace(/ L\d+$/, '');
 const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
@@ -607,7 +607,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103d. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103e. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
