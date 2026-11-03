@@ -1,0 +1,35 @@
+job,label,start,end,kind,note
+Anytime Fitness,Survey (Urv with Mat),2026-11-03,2026-11-03,program,Survey due from midday.
+459 Little Collins St,Remaining install (all stages),2026-11-04,2026-12-08,proposed,"Proposed. 865 h less 310 h used, crew 3. Simpro has one line, so stages are not split. Plaster dates per level still owed by Jack."
+Swan St IGA,Mechanical rough-in (remaining),2026-11-04,2026-11-18,proposed,"Proposed. Rough-in 300 h less 144 h used, crew 2. Non-return dampers due on site Wed 4 Nov. Work schedule still owed to Hans."
+TSA Bentleigh,Rough-in starts (Labourly),2026-11-04,2026-11-06,pending,Labourly Wed 4 Nov 8am then Thu and Fri 7am. Waiting on Josh to confirm. No hours loaded in Simpro so the rest cannot be scheduled.
+CHES Fab Lab,L3 fit-off and commissioning,2026-11-05,2026-11-09,program,Builder contract program.
+FS30 Templestowe,"Saturday work, 4 h (Kei)",2026-11-07,2026-11-07,proposed,"4 hours on Sat 7 Nov, Kei (K). Station is otherwise complete."
+Northern Trust L12,Mechanical rough-in,2026-11-09,2026-11-27,proposed,"Starts Mon 9 Nov (Joy). Builder program gave L12 rough-in 15 working days, so it finishes Fri 27 Nov; the builder had 18 Nov. Fit-off still starts 1 Dec on the builder program. Confirm with Simbuilt."
+St Augustine's PS,Fit-off (remaining),2026-11-09,2026-11-10,proposed,"Proposed from Simpro hours at 7.6 h a day. Crew clashes not checked. Fit-off 16 h, crew 2."
+CHES Fab Lab,L1 fit-off and commissioning,2026-11-10,2026-11-13,program,Builder contract program.
+Queen of Peace PS,Mechanical rough-in (remaining),2026-11-10,2026-11-11,proposed,"Proposed. 60 h allowed and 50% claimed, so about half left. Crew 2."
+St Augustine's PS,Commissioning,2026-11-11,2026-11-11,proposed,"Proposed from Simpro hours at 7.6 h a day. Crew clashes not checked. 4 h, crew 2."
+Queen of Peace PS,Fit-off,2026-11-12,2026-11-16,proposed,"Proposed from Simpro hours at 7.6 h a day. Crew clashes not checked. Fit-off 36 h, crew 2."
+Progress claims,55 Brunswick intended claim,2026-11-15,2026-11-15,claim,WIP note: send intended payment claim every 15th. 15 Nov is a Sunday.
+FS03 Carlton,Fantech fire station (3 bays),2026-11-16,2026-11-24,fantech,From the Fantech schedule.
+Anytime Fitness,Mechanical rough-in,2026-11-17,2026-11-19,proposed,"Proposed. Mat said about 2 to 3 weeks from 3 Nov. 40 h, crew 2."
+Queen of Peace PS,Commissioning,2026-11-17,2026-11-17,proposed,"Proposed from Simpro hours at 7.6 h a day. Crew clashes not checked. 8 h, crew 2."
+Monash CL12 Kitchenettes,Install (small job),2026-11-19,2026-11-20,proposed,"Proposed. 28 h in Simpro, crew 2. Start pending Joy."
+Swan St IGA,Fit-off,2026-11-19,2026-12-07,proposed,"Proposed. Fit-off 190 h, crew 2. No commissioning hours in Simpro."
+Anytime Fitness,Fit-off,2026-11-20,2026-11-23,proposed,"Proposed. 16 h, crew 2."
+Anytime Fitness,Commissioning,2026-11-24,2026-11-25,proposed,"Proposed. 16 h, crew 2."
+Progress claims,Claims due 25th,2026-11-25,2026-11-25,claim,Per WIP: St Augustine's PS; Rangebank PS; Queen of Peace; Eildon Rd; Monash ICA; 55 Brunswick St; Flagstaff Lane; The Basin; Miriam Court variations. Claim days for Dec and Jan not confirmed so not plotted.
+Progress claims,Claims due 30th,2026-11-30,2026-11-30,claim,Per WIP: 4 Miriam Court; Swan St IGA; 459 Little Collins St.
+FS39 Port Melbourne,Fantech fire station (2 bays),2026-12-01,2026-12-07,fantech,From the Fantech schedule.
+Monash ICA,Stage 2 ends on builder program (approx.),2026-12-01,2026-12-01,program,Stage 2 starts 14 Sep for 55 days. End worked out as 55 working days; builder Gantt has no commissioning dates.
+Northern Trust L12,Fit-off,2026-12-01,2026-12-10,program,Builder preliminary program: L12 fit-off 1 to 10 Dec.
+Eildon Rd Childcare,Mechanical rough-in (ground floor ceiling),2026-12-03,2026-12-04,program,2MORO program REV02 (19 Oct): 3 to 4 Dec.
+CHES Fab Lab,Practical completion,2026-12-10,2026-12-10,program,Builder program finish 10 Dec.
+Northern Trust L12,Commissioning,2026-12-11,2026-12-15,program,Builder preliminary program: L12 commissioning 11 to 15 Dec.
+FS32 Ormond,Fantech fire station (1 bay),2026-12-14,2026-12-16,fantech,From the Fantech schedule.
+Northern Trust L13,Mechanical rough-in,2027-01-13,2027-01-18,program,Builder preliminary program: L13 rough-in 13 to 18 Jan.
+Eildon Rd Childcare,Mechanical rough-in (remaining),2027-01-14,2027-01-18,program,2MORO program REV02: 14 to 18 Jan.
+FS34 Highett,Fantech fire station (2 bays),2027-01-18,2027-01-22,fantech,From the Fantech schedule.
+Northern Trust L13,Fit-off,2027-01-19,2027-01-25,program,"Builder program says 19 to 26 Jan. 26 Jan is Australia Day, confirm with Simbuilt."
+Northern Trust L13,Commissioning,2027-01-25,2027-01-27,program,Builder preliminary program: L13 commissioning 25 to 27 Jan.

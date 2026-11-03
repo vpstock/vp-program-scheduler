@@ -1,0 +1,13 @@
+item,demo_h,rough_h,fit_h,comm_h
+High wall split under 20 m,2,7,4,2
+Ceiling cassette or bulkhead under 20 m,3,16,2,1
+Slim or bulkhead ducted 1 to 3 outlets under 20 m,,22,4,2.5
+Ducted system up to 8 points,9,33,17,4
+Ducted system 9 to 12 points,13,41,25,5
+Ducted system over 12 points,17,49,31,6
+VRV 2 pipe (per indoor unit),3,3,2,3
+VRV 3 pipe (per indoor unit),4,4,2,3
+ERV,5,21,3,5
+Pool dehumidifier up to 150 kg,,12,,4
+Inline fan round (current rate),1.5,1.5,,
+Source capture commissioning (per job),,,,4

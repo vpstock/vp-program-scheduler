@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project program scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500&family=Public+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+:root{--color-fg:#14181e;--color-fg-muted:#6b7688;--color-bg:#f7f8fa;--color-panel:#ffffff;--color-border-line:#dfe4ec;--color-ok:#1a7f4b;--color-warn:#b45309;--color-bad:#c0392b;
+--font-anthropic-sans:'Public Sans',Arial,sans-serif;--font-anthropic-serif:'Newsreader',Georgia,serif;
+--cds-font-size-title:30px;--cds-font-size-heading:18px;--cds-font-size-body:15px;--cds-font-size-caption:13px;--cds-font-weight-medium:500;
+--cds-gap-sm:6px;--cds-gap-md:12px;--cds-gap-lg:20px;--cds-pad-md:12px;--cds-pad-lg:20px;--cds-radius:8px;
+--cds-chart-1:#0b4fd4;--cds-chart-2:#12aef4;--cds-chart-3:#0a1a4d}
+@media (prefers-color-scheme:dark){:root{--color-fg:#eef1f6;--color-fg-muted:#9aa5b8;--color-bg:#0e1420;--color-panel:#161e2e;--color-border-line:#2a3550;--color-ok:#4cc38a;--color-warn:#f0a050;--color-bad:#ff7a6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans);font-size:var(--cds-font-size-body);line-height:1.5}
+#dash-root{padding:24px 16px}
+.psp h1{font-weight:500}
+
+.psp{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:var(--cds-gap-lg);font-family:var(--font-anthropic-sans)}
+.psp h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0}
+.psp h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.psp p{margin:0}
+.psp .muted{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.psp .card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);display:flex;flex-direction:column;gap:var(--cds-gap-md);min-width:0}
+.psp .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:var(--cds-gap-md)}
+.psp .kpi{display:flex;flex-direction:column;gap:2px;border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-md)}
+.psp .kpi b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);font-variant-numeric:tabular-nums}
+.psp .scroll{overflow-x:auto}
+.psp table{border-collapse:collapse;width:100%;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.psp th,.psp td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--color-border-line);vertical-align:top}
+.psp th{color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium);white-space:nowrap}
+.psp td.n,.psp th.n{text-align:right}
+.psp .pill{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--color-border-line);white-space:nowrap}
+.psp .pill.ok{color:var(--color-ok)}
+.psp .pill.warn{color:var(--color-warn)}
+.psp .pill.bad{color:var(--color-bad)}
+.psp .bars{display:flex;flex-direction:column;gap:6px;min-height:6rem}
+.psp .brow{display:grid;grid-template-columns:minmax(7rem,12rem) 1fr 4.5rem;gap:var(--cds-gap-sm);align-items:center;font-size:var(--cds-font-size-caption)}
+.psp .btrack{display:flex;height:16px;gap:1px}
+.psp .btrack i{display:block;height:100%}
+.psp .legend{display:flex;flex-wrap:wrap;gap:var(--cds-gap-md);font-size:var(--cds-font-size-caption)}
+.psp .legend span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--c)}
+.psp ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.psp .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--cds-gap-md)}
+.psp .cal{min-width:44rem;display:flex;flex-direction:column;gap:2px}
+.psp .calrow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.psp .calhead span{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);padding:4px 6px}
+.psp .day{min-height:6.5rem;border:1px solid var(--color-border-line);border-radius:6px;padding:4px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.psp .day.out{opacity:.4}
+.psp .day.wkend{background:var(--color-panel)}
+.psp .day .dn{font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;color:var(--color-fg-muted)}
+.psp .day .hol{font-size:11px;color:var(--color-warn)}
+.psp .chip{font-size:11px;line-height:1.25;padding:2px 4px;border-left:4px solid var(--k);border-radius:3px;border-top:1px solid var(--color-border-line);border-right:1px solid var(--color-border-line);border-bottom:1px solid var(--color-border-line);overflow-wrap:anywhere}
+.psp .chip.dash{border-style:dashed;border-left-style:solid}
+.psp .legend2{display:flex;flex-wrap:wrap;gap:var(--cds-gap-md);font-size:var(--cds-font-size-caption)}
+.psp .legend2 span{padding:1px 6px;border-left:4px solid var(--k)}
+.psp .tabs{display:flex;gap:4px;border-bottom:1px solid var(--color-border-line);flex-wrap:wrap}
+.psp .tab{font:inherit;color:var(--color-fg-muted);background:none;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;padding:8px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.psp .tab b{font-weight:var(--cds-font-weight-medium);font-size:var(--cds-font-size-body)}
+.psp .tab small{font-size:11px}
+.psp .tab:hover{color:var(--color-fg)}
+.psp .tab[aria-selected="true"]{color:var(--color-fg);border-color:var(--color-border-line);background:var(--color-panel);margin-bottom:-1px}
+.psp .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.psp .fbtn{font:inherit;font-size:var(--cds-font-size-caption);color:inherit;background:none;border:1px solid var(--color-border-line);border-left:4px solid var(--k);border-radius:6px;padding:3px 10px;cursor:pointer}
+.psp .fbtn[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+.psp .filters select,.psp .filters .clr{font:inherit;font-size:var(--cds-font-size-caption);color:inherit;background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:6px;padding:3px 8px;cursor:pointer}
+.psp button.chip{display:block;width:100%;text-align:left;font-family:inherit;color:inherit;background:transparent;cursor:pointer;transition:background .15s,opacity .15s,transform .15s}
+.psp button.chip:hover{background:var(--color-panel);transform:translateY(-1px)}
+.psp .cal.picked .chip:not(.hl){opacity:.3}
+.psp .chip.hl{outline:2px solid var(--k);outline-offset:0}
+.psp .day.today{outline:2px solid #0b4fd4;outline-offset:-1px}
+.psp .day.today .dn{color:#0b4fd4;font-weight:var(--cds-font-weight-medium)}
+.psp .detail{border:1px solid var(--color-border-line);border-left:4px solid var(--k,var(--color-border-line));border-radius:var(--cds-radius);padding:var(--cds-pad-md);display:flex;flex-direction:column;gap:4px;font-size:var(--cds-font-size-caption)}
+.psp .detail strong{font-size:var(--cds-font-size-body)}
+.psp tr.pick td{background:var(--color-panel)}
+.psp tr.click{cursor:pointer}
+.psp .fade{animation:pspin .25s ease}
+@keyframes pspin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.psp .fade{animation:none}.psp button.chip{transition:none}}
+
+</style>
+</head>
+<body>
+<div id="dash-root">
+
+<div class="psp">
+  <header>
+    <h1>Project program scheduler</h1>
+    <p class="muted">Victorian Projects. Prepared for Joy. Hours are labour hours, not calendar days. <span id="asof"></span></p>
+  </header>
+
+  <section class="card" id="summary">
+    <h2>Where the programs stand</h2>
+    <div class="kpis">
+      <div class="kpi"><span class="muted">Jobs with hours loaded</span><b data-draw="kpi" data-source="summary" data-field="jobs">—</b></div>
+      <div class="kpi"><span class="muted">Hours allowed (Simpro)</span><b data-draw="kpi" data-source="summary" data-field="hours">—</b></div>
+      <div class="kpi"><span class="muted">Programs found</span><b data-draw="kpi" data-source="summary" data-field="found">—</b></div>
+      <div class="kpi"><span class="muted">Jobs with no program</span><b data-draw="kpi" data-source="summary" data-field="missing">—</b></div>
+    </div>
+    <p>Jobs marked "None found" have no program file in the SharePoint job folders or the email searched so far. Flagstaff Lane has been requested from the builder.</p>
+  </section>
+
+  <section class="card" id="stages">
+    <h2>How long each stage takes</h2>
+    <p class="muted">Hours are from Simpro (read 3 Nov). Rough-in is mechanical rough-in services only, so the fire station electrical hours are left out. Days assume a crew of 2 (1 for Freshwater Place, 3 for 459 Little Collins) at 7.6 hours a day. Change the crew and the days change with it. Hours are not split where Simpro has a single line.</p>
+    <div class="legend"><span style="--c:var(--cds-chart-1, #0b4fd4)">Rough-in</span><span style="--c:var(--cds-chart-2, #12aef4)">Fit-off</span><span style="--c:var(--cds-chart-3, #0a1a4d)">Commissioning</span></div>
+    <div class="bars" data-draw="stagebars" data-source="stage_days">—</div>
+    <div class="scroll">
+      <table data-source="stage_days" data-row-key="job">
+        <thead><tr>
+          <th data-field="job">Job</th>
+          <th data-field="simpro">Simpro</th>
+          <th class="n" data-field="demo_h">Demo h</th>
+          <th class="n" data-field="rough_h">Rough-in h</th>
+          <th class="n" data-field="rough_d">Rough-in days</th>
+          <th class="n" data-field="fit_h">Fit-off h</th>
+          <th class="n" data-field="fit_d">Fit-off days</th>
+          <th class="n" data-field="comm_h">Comm. h</th>
+          <th class="n" data-field="comm_d">Comm. days</th>
+          <th class="n" data-field="unsplit_h">Unsplit h</th>
+          <th class="n" data-field="used_h">Used h</th>
+          <th data-field="basis">Note</th>
+        </tr></thead>
+        <tbody data-draw="stagetable"></tbody>
+      </table>
+    </div>
+    <p class="muted">Cut out is not a stage in the Estimating Guideline. It appears in builder programs (for example Austin HSB "Services cut outs" and Monash ICA "Electrical cutout"), so it is shown in the program table below. Tell me if you meant something else.</p>
+  </section>
+
+  <section class="card" id="calendar">
+    <h2>Calendar, November 2026 to January 2027</h2>
+    <p class="muted">Built from the November WIP sheet, the builder programs found and the Fantech fire station schedule. Where a job has no program, dates are proposed from the Simpro hours and shown dashed. Rough-in means mechanical rough-in services only. Electrical is done by the subcontract electrician and is not counted.</p>
+    <div class="calapp" data-draw="calendar" data-source="cal_events">—</div>
+  </section>
+
+  <section class="card" id="wipnov">
+    <h2>November jobs from the WIP</h2>
+    <p class="muted">Every live job on the November WIP sheet. Jobs with no hours in Simpro and no builder program cannot be scheduled yet and are marked as such. Completed jobs are left out. Service jobs and the other Fantech stations on the sheet are not dated here.</p>
+    <div class="scroll">
+      <table data-source="wip_nov" data-row-key="job_no">
+        <thead><tr>
+          <th data-field="job_no">Job</th>
+          <th data-field="job">Name</th>
+          <th data-field="builder">Builder</th>
+          <th data-field="this_month">On the WIP this month</th>
+          <th data-field="claim_day">Claim day</th>
+          <th data-field="dates">Program dates</th>
+        </tr></thead>
+        <tbody data-draw="wiptable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" id="fantech">
+    <h2>Fantech fire stations</h2>
+    <p class="muted">Finish date is worked out from the start date and the bay rule, counting working days and skipping Victorian public holidays. The rule is 1 bay 3 days, then 2 more days for each extra bay. Where the schedule already has a finish date it is compared against the rule.</p>
+    <div class="scroll">
+      <table data-source="fantech_sched" data-row-key="station">
+        <thead><tr>
+          <th data-field="station">Station</th>
+          <th data-field="name">Name</th>
+          <th data-field="district">District</th>
+          <th class="n" data-field="bays">Bays</th>
+          <th class="n" data-field="days">Days</th>
+          <th data-field="start">Start</th>
+          <th data-field="finish_rule">Finish by rule</th>
+          <th data-field="finish_given">Finish on schedule</th>
+          <th data-field="status">Status</th>
+          <th data-field="check">Check</th>
+        </tr></thead>
+        <tbody data-draw="fantechtable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" id="programs">
+    <h2>Construction programs found</h2>
+    <p class="muted">Dates are the builder's, taken from the program files. Outdated folders were not used.</p>
+    <div class="scroll">
+      <table data-source="programs" data-row-key="job">
+        <thead><tr>
+          <th data-field="job">Job</th>
+          <th data-field="status">Status</th>
+          <th data-field="rough_in">Rough-in</th>
+          <th data-field="fit_off">Fit-off</th>
+          <th data-field="cut_out">Cut out</th>
+          <th data-field="commissioning">Commissioning</th>
+          <th data-field="program_start">Starts</th>
+          <th data-field="program_finish">Finishes</th>
+        </tr></thead>
+        <tbody data-draw="programtable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" id="guideline">
+      <h2>Guideline hours per item</h2>
+      <p class="muted">Estimating Guideline, current hours, before difficulty factor (1.0, 1.2 or 1.5). Proposed changes in the 19 Oct review are not applied.</p>
+      <div class="scroll">
+        <table data-source="guideline" data-row-key="item">
+          <thead><tr>
+            <th data-field="item">Item</th>
+            <th class="n" data-field="demo_h">Demo</th>
+            <th class="n" data-field="rough_h">Rough-in</th>
+            <th class="n" data-field="fit_h">Fit-off</th>
+            <th class="n" data-field="comm_h">Comm.</th>
+          </tr></thead>
+          <tbody data-draw="guidetable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="crew">
+      <h2>Who is working with us</h2>
+      <p class="muted">From Mat's 3 Nov programming agenda.</p>
+      <div class="scroll">
+        <table data-source="crew" data-row-key="name">
+          <thead><tr>
+            <th data-field="name">Name</th>
+            <th data-field="role">Role</th>
+            <th data-field="current_work">Current work</th>
+          </tr></thead>
+          <tbody data-draw="crewtable"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" id="open">
+    <h2>To confirm before dates go in the Labour Planner</h2>
+    <ul>
+      <li>Stage hours do not match between Simpro and the costing sheets for Anytime Fitness (72 h against 52.45 h) and 459 Little Collins (865 h against 1082.25 h).</li>
+      <li>Swan St IGA has no commissioning or site set up hours. Simpro has no site set up cost centre on any job.</li>
+      <li>Simpro shows 0 hours used on most jobs, so I cannot tell what has started. St Augustine's PS and Freshwater Place show as fully invoiced.</li>
+      <li>Toolern Vale, Department of Education, Austin Health and Sanamethod are complete, so they need no program. Austin HSB stays in the program table for reference only.</li>
+      <li>Allan is named on the Swan St IGA crew but is not on your list. Fernando is back in January.</li>
+      <li>Email was searched for the first 50 "construction program" results only. Flagstaff Lane is still waiting on GRN.</li>
+      <li>Fantech stations: Greensborough, Tullamarine, Templestowe and Croydon are done but their finish dates are still blank on the schedule. Richmond, Morwell and Shepparton finish dates differ from the bay rule (see the Fantech table).</li>
+      <li>Northern Trust L12 rough-in starts Mon 9 Nov. The finish of Fri 27 Nov is my assumption (the builder allowed 15 working days). The builder had it finishing 18 Nov.</li>
+      <li>Dates in dashed boxes are proposed from Simpro hours (7.6 h a day, crew as shown in the stage table). Crew clashes between jobs are not checked. Swan St IGA and 459 Little Collins are still waiting on work schedules from the builders, and 459 Little Collins runs on one Simpro line so its stages are not split.</li>
+      <li>Not scheduled because Simpro has no hours and there is no program: TSA Bentleigh (after the 4 to 6 Nov rough-in), Rangebank PS, 55 Brunswick St, V/Line Ballarat East, Flagstaff Lane, The Basin, 4 Miriam Court and the service jobs. Freshwater Place shows as fully invoiced so is left off.</li>
+      <li>Rough-in hours are mechanical only. Croydon is 119 h and Templestowe 90 h; the electrical hours are left out. Used hours on those two jobs may still include electrical. Both stations are done, with 4 h for Kei at Templestowe on Sat 7 Nov.</li>
+    </ul>
+  </section>
+</div>
+
+
+</div>
+<script>
+
+const dash = {
+  colors: ['#0b4fd4', '#12aef4', '#0a1a4d', '#6b7688', '#1a7f4b', '#b45309', '#7a4fd4', '#c0392b'],
+  _d: {}, _c: {}, _dr: {}, _ids: [], _asof: null,
+  calc(id, o) { this._c[id] = o; },
+  draw(name, fn) { this._dr[name] = fn; },
+  data(id) {
+    const c = this._c[id];
+    if (c) {
+      const ins = c.inputs.map((i) => this.data(i));
+      return ins.every((x) => x.status === 'ok') ? { status: 'ok', data: c.fn(...ins.map((x) => x.data)) } : { status: 'loading', data: [] };
+    }
+    return this._d[id] ? { status: 'ok', data: this._d[id] } : { status: 'loading', data: [] };
+  },
+  async load() {
+    await Promise.all(this._ids.map(async (id) => {
+      const r = await fetch('data/' + id + '.csv?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error(id + ' ' + r.status);
+      const lm = r.headers.get('last-modified');
+      if (lm && (!this._asof || new Date(lm) > this._asof)) this._asof = new Date(lm);
+      this._d[id] = d3.csvParse(await r.text());
+    }));
+  },
+  paint() {
+    document.querySelectorAll('[data-draw]').forEach((el) => { const f = this._dr[el.dataset.draw]; if (f) f(el); });
+    const a = document.getElementById('asof');
+    if (a && this._asof) a.textContent = 'Data last updated ' + d3.timeFormat('%a %-d %b %Y, %-I:%M %p')(this._asof) + '.';
+  },
+  async start(ids) {
+    this._ids = ids;
+    try { await this.load(); this.paint(); } catch (e) { document.getElementById('dash-root').insertAdjacentHTML('afterbegin', '<p style="color:var(--color-bad)">Could not load the data files: ' + e.message + '</p>'); }
+    setInterval(async () => { try { await this.load(); this.paint(); } catch (e) {} }, 5 * 60 * 1000);
+  }
+};
+
+</script>
+<script>
+
+const num = (x) => { const n = Number(x); return Number.isFinite(n) && String(x).trim() !== '' ? n : null; };
+const days = (h, crew, dh) => (h && h > 0) ? Math.ceil(h / (crew * dh)) : null;
+
+dash.calc('stage_days', {
+  title: 'Stage hours and days',
+  description: 'Simpro hours per stage, with days worked out as hours divided by crew size and hours per day, rounded up.',
+  inputs: ['stage_hours'],
+  fn: (stage_hours) => stage_hours.map((r) => {
+    const crew = Number(r.crew), dh = Number(r.day_h);
+    const n = (x) => (String(x).trim() === '' ? null : Number(x));
+    const d = (h) => (h && h > 0) ? Math.ceil(h / (crew * dh)) : null;
+    return {
+      job: r.job, simpro: r.simpro, basis: r.basis,
+      demo_h: n(r.demo_h) || null, rough_h: n(r.rough_h) || null, rough_d: d(n(r.rough_h)),
+      fit_h: n(r.fit_h) || null, fit_d: d(n(r.fit_h)),
+      comm_h: n(r.comm_h) || null, comm_d: d(n(r.comm_h)),
+      unsplit_h: n(r.unsplit_h) || null, used_h: n(r.used_h) || null
+    };
+  })
+});
+
+dash.calc('summary', {
+  title: 'Program summary',
+  description: 'Counts of jobs with hours and programs, and total Simpro hours.',
+  inputs: ['stage_hours', 'programs'],
+  fn: (stage_hours, programs) => {
+    const hrs = (r) => ['demo_h','rough_h','fit_h','comm_h','unsplit_h'].reduce((a, k) => a + (Number(r[k]) || 0), 0);
+    const withHours = stage_hours.filter((r) => hrs(r) > 0);
+    const found = programs.filter((r) => r.status.startsWith('Found')).length;
+    const none = programs.filter((r) => r.status === 'None found').length;
+    return [{ jobs: withHours.length, hours: Math.round(withHours.reduce((a, r) => a + hrs(r), 0)), found, missing: none }];
+  }
+});
+
+const ok = (id) => { const g = dash.data(id); return g.status === 'ok' ? g.data : null; };
+const fmt = (v) => (v === null || v === undefined || v === '') ? '—' : (typeof v === 'number' ? d3.format(',')(v) : String(v));
+
+dash.draw('kpi', (el) => {
+  const rows = ok('summary');
+  el.textContent = rows && rows.length ? fmt(rows[0][el.dataset.field]) : '—';
+});
+
+function fillTable(tbody, rows, cols, numeric) {
+  tbody.replaceChildren();
+  if (!rows) return;
+  rows.forEach((r) => {
+    const tr = document.createElement('tr');
+    cols.forEach((c) => {
+      const td = document.createElement('td');
+      if (numeric.includes(c)) td.className = 'n';
+      td.textContent = fmt(r[c]);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+dash.draw('stagetable', (tb) => fillTable(tb, ok('stage_days'),
+  ['job','simpro','demo_h','rough_h','rough_d','fit_h','fit_d','comm_h','comm_d','unsplit_h','used_h','basis'],
+  ['demo_h','rough_h','rough_d','fit_h','fit_d','comm_h','comm_d','unsplit_h','used_h']));
+dash.draw('programtable', (tb) => fillTable(tb, ok('programs'),
+  ['job','status','rough_in','fit_off','cut_out','commissioning','program_start','program_finish'], []));
+dash.draw('guidetable', (tb) => fillTable(tb, ok('guideline'), ['item','demo_h','rough_h','fit_h','comm_h'], ['demo_h','rough_h','fit_h','comm_h']));
+dash.draw('crewtable', (tb) => fillTable(tb, ok('crew'), ['name','role','current_work'], []));
+
+dash.draw('stagebars', (el) => {
+  const rows = ok('stage_days');
+  if (!rows) { el.textContent = '—'; return; }
+  const split = rows.filter((r) => (r.rough_d || 0) + (r.fit_d || 0) + (r.comm_d || 0) > 0);
+  const max = d3.max(split, (r) => (r.rough_d || 0) + (r.fit_d || 0) + (r.comm_d || 0)) || 1;
+  const cols = [dash.colors[0], dash.colors[1], dash.colors[2]];
+  el.replaceChildren();
+  split.forEach((r) => {
+    const parts = [r.rough_d || 0, r.fit_d || 0, r.comm_d || 0];
+    const total = parts.reduce((a, b) => a + b, 0);
+    const row = document.createElement('div'); row.className = 'brow';
+    const name = document.createElement('span'); name.textContent = r.job;
+    const track = document.createElement('div'); track.className = 'btrack';
+    track.style.width = (total / max * 100) + '%';
+    parts.forEach((p, i) => {
+      if (!p) return;
+      const seg = document.createElement('i');
+      seg.style.flex = p + ' 0 0'; seg.style.background = cols[i];
+      seg.title = ['Rough-in', 'Fit-off', 'Commissioning'][i] + ': ' + p + ' days';
+      track.appendChild(seg);
+    });
+    const tot = document.createElement('span'); tot.className = 'muted'; tot.textContent = total + ' days';
+    row.append(name, track, tot);
+    el.appendChild(row);
+  });
+});
+
+const parseD = (s) => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const isoD = d3.timeFormat('%Y-%m-%d');
+const longD = d3.timeFormat('%a %-d %b %Y');
+const HOL = ['2026-11-03','2026-12-25','2026-12-28','2027-01-01','2027-01-26','2027-03-08','2027-03-26','2027-03-29'];
+const isWork = (d) => d.getDay() !== 0 && d.getDay() !== 6 && !HOL.includes(isoD(d));
+const finishFor = (start, n) => {
+  let d = parseD(start), c = 0;
+  for (let i = 0; i < 400; i++) {
+    if (isWork(d)) { c++; if (c === n) return d; }
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+  }
+  return null;
+};
+
+dash.calc('fantech_sched', {
+  title: 'Fantech fire station schedule',
+  description: 'Finish by the bay rule (3 days for 1 bay, plus 2 days for each extra bay, working days, Victorian public holidays skipped) compared with the schedule finish.',
+  inputs: ['fantech'],
+  fn: (fantech) => fantech.map((r) => {
+    const bays = Number(r.bays), n = 2 * bays + 1;
+    const f = finishFor(r.start, n);
+    const given = r.finish_given ? parseD(r.finish_given) : null;
+    let check = r.status === 'Done' ? 'Done' : 'No finish on schedule';
+    if (given && r.status !== 'Done') check = isoD(given) === isoD(f) ? 'Matches the rule' : 'Differs: schedule is ' + (given > f ? 'later' : 'earlier') + ' than the rule';
+    return { station: r.station, name: r.name, district: r.district, bays, days: n,
+      start: longD(parseD(r.start)), finish_rule: longD(f), finish_given: given ? longD(given) : '', status: r.status || '', check };
+  })
+});
+
+
+dash.draw('wiptable', (tb) => fillTable(tb, ok('wip_nov'), ['job_no','job','builder','this_month','claim_day','dates'], []));
+dash.draw('fantechtable', (tb) => fillTable(tb, ok('fantech_sched'), ['station','name','district','bays','days','start','finish_rule','finish_given','status','check'], ['bays','days']));
+
+const KIND = {
+  program: { name: 'Builder program', c: '#0b4fd4' },
+  fantech: { name: 'Fantech fire station', c: '#12aef4' },
+  proposed: { name: 'Proposed from Simpro hours', c: 'var(--color-fg-muted)', dash: true },
+  pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true },
+  claim: { name: 'Progress claim', c: 'var(--color-ok)' }
+};
+const MONTHS = [[2026, 10], [2026, 11], [2027, 0]];
+const ui = { m: null, kinds: new Set(Object.keys(KIND)), job: 'all', pick: null };
+const baseJob = (j) => String(j).replace(/ L\d+$/, '');
+const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const shortD = d3.timeFormat('%a %-d %b');
+
+dash.draw('calendar', (el) => {
+  const ev = ok('cal_events');
+  if (!ev) { el.textContent = '—'; return; }
+  const items = ev.map((r, i) => ({ ...r, i, s: parseD(r.start), e: parseD(r.end), base: baseJob(r.job) }));
+  if (ui.m === null) {
+    const now = new Date();
+    const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
+    ui.m = idx >= 0 ? idx : 0;
+  }
+  const vis = (r) => ui.kinds.has(r.kind) && (ui.job === 'all' || r.base === ui.job);
+  const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
+
+  function render() {
+    el.replaceChildren();
+    const [yy, mm] = MONTHS[ui.m];
+    const mStart = new Date(yy, mm, 1), mEnd = new Date(yy, mm + 1, 0);
+
+    // Month tabs
+    const tabs = mk('div', 'tabs'); tabs.setAttribute('role', 'tablist');
+    MONTHS.forEach(([y, m], mi) => {
+      const b = mk('button', 'tab'); b.type = 'button'; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(mi === ui.m));
+      const n = items.filter((r) => inMonth(r, mi) && vis(r)).length;
+      b.append(mk('b', '', d3.timeFormat('%B %Y')(new Date(y, m, 1))), mk('small', '', n + (n === 1 ? ' entry' : ' entries')));
+      b.onclick = () => { ui.m = mi; ui.pick = null; render(); };
+      tabs.appendChild(b);
+    });
+    el.appendChild(tabs);
+
+    const body = mk('div', 'fade'); body.style.cssText = 'display:flex;flex-direction:column;gap:var(--cds-gap-md);padding-top:var(--cds-gap-md)';
+    el.appendChild(body);
+
+    // Filters
+    const fl = mk('div', 'filters');
+    Object.entries(KIND).forEach(([k, v]) => {
+      const b = mk('button', 'fbtn', v.name); b.type = 'button';
+      b.style.setProperty('--k', v.c);
+      b.setAttribute('aria-pressed', String(ui.kinds.has(k)));
+      b.onclick = () => { ui.kinds.has(k) ? ui.kinds.delete(k) : ui.kinds.add(k); ui.pick = null; render(); };
+      fl.appendChild(b);
+    });
+    const sel = mk('select'); sel.setAttribute('aria-label', 'Filter by job');
+    const jobs = [...new Set(items.filter((r) => r.kind !== 'claim').map((r) => r.base))].sort();
+    [['all', 'All jobs'], ...jobs.map((j) => [j, j])].forEach(([v, t]) => { const o = mk('option', '', t); o.value = v; if (v === ui.job) o.selected = true; sel.appendChild(o); });
+    sel.onchange = () => { ui.job = sel.value; ui.pick = null; render(); };
+    const clr = mk('button', 'clr', 'Reset'); clr.type = 'button';
+    clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.pick = null; render(); };
+    fl.append(sel, clr);
+    body.appendChild(fl);
+
+    // Month summary
+    const mItems = items.filter((r) => inMonth(r, ui.m) && vis(r));
+    const fsDays = mItems.filter((r) => r.kind === 'fantech').reduce((a, r) => {
+      let n = 0;
+      for (let d = new Date(Math.max(r.s, mStart)); d <= Math.min(r.e, mEnd); d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) if (isWork(d)) n++;
+      return a + n;
+    }, 0);
+    const kp = mk('div', 'kpis');
+    [['Jobs on the calendar', new Set(mItems.filter((r) => r.kind !== 'claim').map((r) => r.base)).size],
+     ['Fire station days', fsDays],
+     ['Proposed entries', mItems.filter((r) => r.kind === 'proposed').length],
+     ['Progress claim days', mItems.filter((r) => r.kind === 'claim').length]].forEach(([l, v]) => {
+      const k = mk('div', 'kpi'); k.append(mk('span', 'muted', l), mk('b', '', String(v))); kp.appendChild(k);
+    });
+    body.appendChild(kp);
+
+    // Grid
+    const picked = ui.pick === null ? null : items[ui.pick];
+    const wrap = mk('div', 'scroll');
+    const cal = mk('div', 'cal' + (picked ? ' picked' : ''));
+    const head = mk('div', 'calrow calhead');
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((n) => head.appendChild(mk('span', '', n)));
+    cal.appendChild(head);
+    const first = new Date(yy, mm, 1);
+    let day = new Date(yy, mm, 1 - ((first.getDay() + 6) % 7));
+    const todayIso = isoD(new Date());
+    while (day < new Date(yy, mm + 1, 1)) {
+      const row = mk('div', 'calrow');
+      for (let i = 0; i < 7; i++) {
+        const inM = day.getMonth() === mm;
+        const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
+        cell.appendChild(mk('span', 'dn', String(day.getDate())));
+        if (inM && HOL.includes(isoD(day))) cell.appendChild(mk('span', 'hol', 'Public holiday'));
+        if (inM) {
+          items.filter(vis).forEach((r) => {
+            if (day < r.s || day > r.e) return;
+            const single = isoD(r.s) === isoD(r.e);
+            if (!single && !isWork(day)) return;
+            const kd = KIND[r.kind] || { c: 'var(--color-fg-muted)', dash: true };
+            const c = mk('button', 'chip' + (kd.dash ? ' dash' : '') + (picked && picked.base === r.base ? ' hl' : ''), r.kind === 'claim' ? r.label : r.job + ' · ' + r.label);
+            c.type = 'button';
+            c.style.setProperty('--k', kd.c);
+            c.title = r.job + ': ' + r.label;
+            c.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
+            cell.appendChild(c);
+          });
+        }
+        row.appendChild(cell);
+        day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+      }
+      cal.appendChild(row);
+    }
+    wrap.appendChild(cal); body.appendChild(wrap);
+
+    // Detail
+    const det = mk('div', 'detail');
+    if (picked) {
+      det.style.setProperty('--k', (KIND[picked.kind] || {}).c || 'var(--color-border-line)');
+      det.append(mk('strong', '', picked.job + ': ' + picked.label),
+        mk('span', '', isoD(picked.s) === isoD(picked.e) ? shortD(picked.s) : shortD(picked.s) + ' to ' + shortD(picked.e)),
+        mk('span', 'muted', (KIND[picked.kind] || {}).name || picked.kind),
+        mk('span', '', picked.note));
+      const others = items.filter((r) => r.base === picked.base && r.i !== picked.i && r.kind !== 'claim');
+      if (others.length) det.appendChild(mk('span', 'muted', 'Other dates for this job: ' + others.map((r) => r.label + ' ' + shortD(r.s)).join('; ')));
+    } else {
+      det.appendChild(mk('span', 'muted', 'Click a box in the calendar, or a row below, to see the detail and every date for that job.'));
+    }
+    body.appendChild(det);
+
+    // Agenda
+    const sc = mk('div', 'scroll');
+    const tb = mk('table');
+    const thd = mk('thead'); const hr = mk('tr');
+    ['Job', 'What', 'From', 'To', 'Type'].forEach((t) => hr.appendChild(mk('th', '', t)));
+    thd.appendChild(hr); tb.appendChild(thd);
+    const tbody = mk('tbody');
+    mItems.slice().sort((a, b) => a.s - b.s || a.job.localeCompare(b.job)).forEach((r) => {
+      const tr = mk('tr', 'click' + (ui.pick === r.i ? ' pick' : ''));
+      [r.job, r.label, shortD(r.s), shortD(r.e), (KIND[r.kind] || {}).name || r.kind].forEach((t) => tr.appendChild(mk('td', '', t)));
+      tr.onclick = () => { ui.pick = ui.pick === r.i ? null : r.i; render(); };
+      tbody.appendChild(tr);
+    });
+    if (!mItems.length) { const tr = mk('tr'); const td = mk('td', '', 'Nothing matches these filters for this month.'); td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr); }
+    tb.appendChild(tbody); sc.appendChild(tb); body.appendChild(sc);
+  }
+  render();
+});
+
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov']);
+</script>
+</body>
+</html>
