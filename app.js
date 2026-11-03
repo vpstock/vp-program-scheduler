@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103o. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103p. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -750,7 +750,7 @@ dash.draw('calendar', (el) => {
           const rs = ents.filter((r) => r.kind !== 'program');
           let tot = 0, dn = 0;
           rs.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x) || isoD(r.s) === isoD(r.e)) { tot++; if (x < today0) dn++; } });
-          det.appendChild(mk('span', 'muted', (isCondRep ? 'Scope: condition report and airflow testing, one day. There are no rough-in, fit-off or commissioning stages. ' : 'Small job, so there are no rough-in, fit-off or commissioning stages. ') + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
+          det.appendChild(mk('span', 'muted', (isCondRep ? 'Scope: condition report and airflow testing. There are no rough-in, fit-off or commissioning stages. ' : 'Small job, so there are no rough-in, fit-off or commissioning stages. ') + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
           if (tot) { const db = mk('div', 'daybar'); const df = document.createElement('i'); df.style.width = Math.round(dn / tot * 100) + '%'; df.style.background = jobColor(ui.sel); db.appendChild(df); det.appendChild(db); }
         } else
         if (isFire) {
