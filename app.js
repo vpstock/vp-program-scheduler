@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103w. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103x. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -698,14 +698,14 @@ dash.draw('calendar', (el) => {
           det.appendChild(mk('span', 'muted', 'Ticks come from the job channel posts and the daily site recap (last updated ' + (asOf(jobMs.filter((x) => /^survey:/i.test(x.milestone))) || '') + '). The survey is not finished: the rest needs a day for Urv, which is not booked yet.'));
           det.appendChild(mk('span', 'muted', 'Install: not started. The crew are expected on site in 2 to 3 weeks, once the survey is finished.'));
         }
-        if (tk.length) {
+        if (tk.length && !/368 smith/i.test(ui.sel)) {
           det.appendChild(mk('span', 'muted', 'Site progress from the job channel'));
           const tw = mk('div', 'trackwrap'); det.appendChild(tw);
           buildSurveyTrack(tw, { items: tk, walkers: crew, color: jobColor(ui.sel), reduce: rcReduce, aria: ui.sel + ' site progress', unit: 'items' });
           det.appendChild(mk('span', 'muted', 'From the Slack job channel posts (last updated ' + (asOf(jobMs.filter((x) => /^task:/i.test(x.milestone))) || '') + '). A ring with a number means still to do; orange means part done.'));
         }
         const finRow = (ok('finished') || []).find((x) => same(x.job, ui.sel));
-        if (finRow) {
+        if (finRow && !/368 smith/i.test(ui.sel)) {
           const fp = pointsFor(finRow.est_h, finRow.actual_h);
           det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + shortD(parseD(finRow.finished)) : '') + (finRow.est_h ? ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' : '') + (fp !== null && finRow.completed_by && !/^FS\d/i.test(finRow.job) ? ', ' + fp + (fp === 1 ? ' point' : ' points') + ' for ' + finRow.completed_by : '')));
           const fw = mk('div', 'trackwrap'); det.appendChild(fw);
@@ -759,8 +759,8 @@ dash.draw('calendar', (el) => {
           const rs = ents.filter((r) => r.kind !== 'program');
           let tot = 0, dn = 0;
           rs.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x) || isoD(r.s) === isoD(r.e)) { tot++; if (x < today0) dn++; } });
-          det.appendChild(mk('span', 'muted', (isCondRep ? 'Scope: condition report and airflow testing. There are no rough-in, fit-off or commissioning stages. ' : 'Small job, so there are no rough-in, fit-off or commissioning stages. ') + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
-          if (tot) { const db = mk('div', 'daybar'); const df = document.createElement('i'); df.style.width = Math.round(dn / tot * 100) + '%'; df.style.background = jobColor(ui.sel); db.appendChild(df); det.appendChild(db); }
+          det.appendChild(mk('span', 'muted', (isCondRep ? 'Scope: condition report and airflow testing. There are no rough-in, fit-off or commissioning stages. ' : 'Small job, so there are no rough-in, fit-off or commissioning stages. ') + (isCondRep ? '' : tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
+          if (tot && !isCondRep) { const db = mk('div', 'daybar'); const df = document.createElement('i'); df.style.width = Math.round(dn / tot * 100) + '%'; df.style.background = jobColor(ui.sel); db.appendChild(df); det.appendChild(db); }
         } else
         if (isFire) {
           // Fire stations: no rough-in, fit-off or commissioning. Progress is by bay and by day.
