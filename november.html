@@ -16,16 +16,33 @@
 <h1>Project program scheduler</h1>
 <p class="muted">Victorian Projects. <span id="asof"></span></p>
 </header>
-<nav class="pnav" aria-label="Pages"><a href="november.html" aria-current="page">November 2026</a><a href="december.html">December 2026</a><a href="january.html">January 2027</a><a href="info.html">More information</a></nav>
+<a class="back" href="index.html">← Back</a>
 <section class="card" id="calendar">
 <h2>November 2026</h2>
 <p class="muted">Dashed boxes are proposed dates and not yet confirmed. Click a box or a row to see the detail.</p>
 <div class="calapp" data-draw="calendar" data-source="cal_events">—</div>
 </section>
+<details class="card more" id="wipnov"><summary>November jobs from the WIP</summary>
+    <p class="muted">Every live job on the November WIP sheet. Jobs with no hours in Simpro and no builder program cannot be scheduled yet and are marked as such. Completed jobs are left out. Service jobs and the other Fantech stations on the sheet are not dated here.</p>
+    <div class="scroll">
+      <table data-source="wip_nov" data-row-key="job_no">
+        <thead><tr>
+          <th data-field="job_no">Job</th>
+          <th data-field="job">Name</th>
+          <th data-field="builder">Builder</th>
+          <th data-field="this_month">On the WIP this month</th>
+          <th data-field="claim_day">Claim day</th>
+          <th data-field="dates">Program dates</th>
+        </tr></thead>
+        <tbody data-draw="wiptable"></tbody>
+      </table>
+    </div>
+  </details>
+
 </div>
 </div>
 <script>window.PAGE_MONTH=0;</script>
 <script src="app.js"></script>
-<script>dash.start(['cal_events']);</script>
+<script>dash.start(['cal_events','wip_nov']);</script>
 </body>
 </html>

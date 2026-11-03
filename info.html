@@ -16,7 +16,7 @@
 <h1>Project program scheduler</h1>
 <p class="muted">Victorian Projects. <span id="asof"></span></p>
 </header>
-<nav class="pnav" aria-label="Pages"><a href="november.html">November 2026</a><a href="december.html">December 2026</a><a href="january.html">January 2027</a><a href="info.html" aria-current="page">More information</a></nav>
+<a class="back" href="index.html">← Back</a>
 <details class="card more" id="summary"><summary>Where the programs stand</summary>
     <div class="kpis">
       <div class="kpi"><span class="muted">Jobs with hours loaded</span><b data-draw="kpi" data-source="summary" data-field="jobs">—</b></div>
@@ -50,22 +50,6 @@
       </table>
     </div>
     <p class="muted">Cut out is not a stage in the Estimating Guideline. It appears in builder programs (for example Austin HSB "Services cut outs" and Monash ICA "Electrical cutout"), so it is shown in the program table below. Tell me if you meant something else.</p>
-  </details>
-<details class="card more" id="wipnov"><summary>November jobs from the WIP</summary>
-    <p class="muted">Every live job on the November WIP sheet. Jobs with no hours in Simpro and no builder program cannot be scheduled yet and are marked as such. Completed jobs are left out. Service jobs and the other Fantech stations on the sheet are not dated here.</p>
-    <div class="scroll">
-      <table data-source="wip_nov" data-row-key="job_no">
-        <thead><tr>
-          <th data-field="job_no">Job</th>
-          <th data-field="job">Name</th>
-          <th data-field="builder">Builder</th>
-          <th data-field="this_month">On the WIP this month</th>
-          <th data-field="claim_day">Claim day</th>
-          <th data-field="dates">Program dates</th>
-        </tr></thead>
-        <tbody data-draw="wiptable"></tbody>
-      </table>
-    </div>
   </details>
 <details class="card more" id="fantech"><summary>Fantech fire stations</summary>
     <p class="muted">Finish date is worked out from the start date and the bay rule, counting working days and skipping Victorian public holidays. The rule is 1 bay 3 days, then 2 more days for each extra bay. Where the schedule already has a finish date it is compared against the rule.</p>
@@ -153,6 +137,6 @@
 </div>
 <script></script>
 <script src="app.js"></script>
-<script>dash.start(['stage_hours','programs','guideline','crew','fantech','wip_nov']);</script>
+<script>dash.start(['stage_hours','programs','guideline','crew','fantech']);</script>
 </body>
 </html>
