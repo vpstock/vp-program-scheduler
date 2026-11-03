@@ -339,3 +339,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .wfree.dragging{opacity:.4}
 .psp .wx{font:600 11px 'Public Sans',Arial,sans-serif;border:1px solid #c7d0de;background:#fff;color:#c92a2a;border-radius:4px;padding:0 5px;cursor:pointer;filter:none}
 .psp .wlh{color:#6b7688;font-size:12px}
+
+.psp .cb[draggable=true]{cursor:grab}
+.psp .cb.dragging{opacity:.4}
+.psp .chip.dropok{outline:2px solid #0b4fd4;background:#dff0ff}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0a1a4d;color:#fff;padding:10px 16px;border-radius:8px;font:500 14px 'Public Sans',Arial,sans-serif;z-index:60;max-width:90vw}

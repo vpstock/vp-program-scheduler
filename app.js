@@ -278,6 +278,17 @@ dash.draw('calendar', (el) => {
   const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
+  let dragPerson = null;
+  const toast = (msg) => { const t = mk('div', 'toast', msg); t.setAttribute('role', 'status'); document.body.appendChild(t); setTimeout(() => t.remove(), 3800); };
+  // Drop a crew face on a job for a day: refused if they are off or already on a job that day.
+  const dropPerson = (p, job, d) => {
+    if (!isWork(d)) { toast(shortD(d) + ' is not a working day.'); return; }
+    const o = offOnFn(p, d); if (o) { toast(p + ' is off on ' + shortD(d) + ' (' + o + ').'); return; }
+    const busy = items.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s <= d && d <= r.e && (isoD(r.s) === isoD(r.e) || isWork(d)) && crewOf(r).includes(p));
+    if (busy.length) { toast(p + ' is already on ' + busy[0].base + ' on ' + shortD(d) + ', so they cannot be moved to another job.'); return; }
+    assignFn(p, job, d);
+  };
+  let offOnFn = () => '', assignFn = () => {};
   function render() {
     el.replaceChildren();
 
@@ -297,6 +308,9 @@ dash.draw('calendar', (el) => {
       b.insertAdjacentHTML('afterbegin', faceSVG(n, 28));
       b.append(n);
       b.onclick = () => { ui.person = ui.person === n ? null : n; ui.sel = null; render(); };
+      b.draggable = true; b.title = 'Click to filter. Drag onto a job on a day to schedule ' + n + '.';
+      b.ondragstart = (e5) => { dragPerson = n; b.classList.add('dragging'); try { e5.dataTransfer.effectAllowed = 'move'; e5.dataTransfer.setData('text/plain', n); } catch (e6) { /* ignore */ } };
+      b.ondragend = () => { dragPerson = null; b.classList.remove('dragging'); };
       cb.appendChild(b);
     });
     body.appendChild(cb);
@@ -401,6 +415,9 @@ dash.draw('calendar', (el) => {
               c.ondragstart = (ev2) => { dragRef = { r, from: dHere }; c.classList.add('dragging'); try { ev2.dataTransfer.effectAllowed = 'move'; ev2.dataTransfer.setData('text/plain', r.job); } catch (e) { /* ignore */ } };
               c.ondragend = () => { c.classList.remove('dragging'); dragRef = null; };
             }
+            c.ondragover = (e5) => { if (dragPerson) { e5.preventDefault(); e5.stopPropagation(); c.classList.add('dropok'); } };
+            c.ondragleave = () => c.classList.remove('dropok');
+            c.ondrop = (e5) => { if (!dragPerson) return; e5.preventDefault(); e5.stopPropagation(); c.classList.remove('dropok'); const p0 = dragPerson; dragPerson = null; dropPerson(p0, r.base, dHere); };
             cell.appendChild(c);
           });
         }
@@ -504,6 +521,7 @@ dash.draw('calendar', (el) => {
     const lh = mk('span', 'wc wl', 'Labour hire');
     tbl.appendChild(lh);
     wdays.forEach((d) => { const cell = mk('span', 'wc wlh'); const on = activeRows(d).filter((r) => /labour hire/i.test((r.label || '') + ' ' + (r.note || ''))).map((r) => r.base); cell.textContent = [...new Set(on)].join(', ') || ''; tbl.appendChild(cell); });
+    offOnFn = offOn; assignFn = assign;
     const sc = mk('div', 'wscroll'); sc.appendChild(tbl); wsec.appendChild(sc);
     body.appendChild(wsec);
 
