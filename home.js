@@ -22,9 +22,25 @@
   if (tEl) tEl.textContent = d3.timeFormat('%A %-d %B %Y')(today);
 
   d3.csv('data/cal_events.csv?t=' + Date.now(), { cache: 'no-store' }).then((rows) => {
-    const ev = rows.map((r) => ({ ...r, s: parse(r.start), e: parse(r.end), base: base(r.job) }));
+    let moves = {};
+    try { moves = JSON.parse(localStorage.getItem('vp-sched-moves-v1') || '{}') || {}; } catch (e) { moves = {}; }
+    const shift = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    const ev = rows.map((r) => { const dd = Number(moves[[r.job, r.label, r.start, r.end].join('|')]) || 0; return { ...r, s: shift(parse(r.start), dd), e: shift(parse(r.end), dd), base: base(r.job) }; });
     const on = (r, d) => r.s <= d && d <= r.e;
     const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d));
+
+    // Overlap alert: the same person on two jobs on the same working day, from today on
+    const alertBox = document.getElementById('clashAlert');
+    if (alertBox) {
+      const cl = findClashes(ev, isWork).filter((c) => c.date >= today);
+      if (cl.length) {
+        const nMoved = Object.keys(moves).length;
+        alertBox.hidden = false;
+        alertBox.innerHTML = '<h2>Overlap warning: ' + cl.length + (cl.length === 1 ? ' double booking' : ' double bookings') + '</h2><ul>' +
+          cl.slice(0, 8).map((c) => '<li><b>' + esc(c.person) + '</b> is on ' + c.jobs.map(esc).join(' and ') + ' on ' + fmt(c.date) + '</li>').join('') + '</ul>' +
+          '<p class="muted">' + (cl.length > 8 ? (cl.length - 8) + ' more on the calendar. ' : '') + 'One person cannot be on two jobs at once, so one of these needs to move.' + (nMoved ? ' This includes ' + nMoved + (nMoved === 1 ? ' item' : ' items') + ' you moved on the calendar.' : '') + '</p>';
+      } else alertBox.hidden = true;
+    }
 
     // Today board
     const board = document.getElementById('todayBoard');

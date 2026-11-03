@@ -432,3 +432,22 @@
       '<small>' + (x.jobs.length ? x.jobs.map((j) => j.job + ' ' + j.pts).join(', ') : 'No finished jobs yet') + '</small></div>').join('');
   };
 })();
+
+/* Overlaps: the same person on two different jobs on the same working day (roster and fire station rows only). */
+window.findClashes = function (rows, isWork) {
+  const out = [], seen = {};
+  const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const act = rows.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s && r.e);
+  const days = {};
+  act.forEach((r) => {
+    const single = iso(r.s) === iso(r.e), who = window.crewOf(r).filter((n) => !/^Labour/.test(n));
+    for (let d = new Date(r.s); d <= r.e; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+      if (!single && !isWork(d)) continue;
+      who.forEach((n) => { const k = iso(d) + '|' + n; (days[k] = days[k] || new Set()).add(r.base || r.job); });
+    }
+  });
+  Object.keys(days).forEach((k) => {
+    if (days[k].size > 1) { const [ds, n] = k.split('|'); const p = ds.split('-'); out.push({ date: new Date(+p[0], +p[1] - 1, +p[2]), iso: ds, person: n, jobs: [...days[k]] }); }
+  });
+  return out.sort((a, b) => a.date - b.date || a.person.localeCompare(b.person));
+};

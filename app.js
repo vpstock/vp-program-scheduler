@@ -257,6 +257,18 @@ dash.draw('calendar', (el) => {
     });
     body.appendChild(kp);
 
+    // Overlaps: the same person on two jobs on one working day
+    const clashAll = findClashes(items, isWork);
+    const clashDay = {};
+    clashAll.forEach((c) => { (clashDay[c.iso] = clashDay[c.iso] || []).push(c); });
+    const clashMonth = clashAll.filter((c) => c.date >= mStart && c.date <= mEnd);
+    if (clashMonth.length) {
+      const al = mk('div', 'alertbox');
+      al.appendChild(mk('strong', '', 'Overlap warning: ' + clashMonth.length + (clashMonth.length === 1 ? ' double booking' : ' double bookings') + ' this month'));
+      const ul = mk('ul'); clashMonth.slice(0, 10).forEach((c) => ul.appendChild(mk('li', '', c.person + ' is on ' + c.jobs.join(' and ') + ' on ' + shortD(c.date))));
+      al.appendChild(ul); body.appendChild(al);
+    }
+
     // Moved items banner
     const nMoved = items.filter((r) => r.moved).length;
     const tip = mk('div', 'movebar');
@@ -285,6 +297,7 @@ dash.draw('calendar', (el) => {
         const dHere = new Date(day);
         const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
         cell.appendChild(mk('span', 'dn', String(day.getDate())));
+        if (inM && clashDay[isoD(day)]) { cell.classList.add('clash'); cell.appendChild(mk('span', 'clashtag', 'Overlap: ' + clashDay[isoD(day)].map((c) => c.person).join(', '))); }
         if (inM && HOL.includes(isoD(day))) cell.appendChild(mk('span', 'hol', 'Public holiday'));
         if (inM) {
           items.filter(vis).forEach((r) => {
