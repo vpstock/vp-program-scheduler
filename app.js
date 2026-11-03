@@ -361,7 +361,7 @@ dash.draw('calendar', (el) => {
         const finRow = (ok('finished') || []).find((x) => same(x.job, ui.sel));
         if (finRow) {
           const fp = pointsFor(finRow.est_h, finRow.actual_h);
-          det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + finRow.finished : '') + ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' + (fp !== null && finRow.completed_by ? ', ' + fp + ' points for ' + finRow.completed_by : '')));
+          det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + shortD(parseD(finRow.finished)) : '') + ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' + (fp !== null && finRow.completed_by ? ', ' + fp + (fp === 1 ? ' point' : ' points') + ' for ' + finRow.completed_by : '')));
           const fw = mk('div', 'trackwrap'); det.appendChild(fw);
           buildCelebration(fw, { name: finRow.completed_by, within: fp === 5 && !!finRow.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' });
         }

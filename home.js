@@ -66,27 +66,9 @@
 
   // Finished jobs: celebration scene and the points chart
   d3.csv('data/finished.csv?t=' + Date.now(), { cache: 'no-store' }).then((rows) => {
-    const box = document.getElementById('finishedJobs'), lb = document.getElementById('leaderboard');
-    if (!box || !lb) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const pool = ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'];
-    box.innerHTML = '';
-    rows.forEach((r) => {
-      const p = pointsFor(r.est_h, r.actual_h), within = p === 5, pct = r.est_h && r.actual_h ? Math.round(+r.actual_h / +r.est_h * 100) : null;
-      const card = el('div', 'fj');
-      const col = p === 5 ? '#2b9348' : p === 3 ? '#f08c00' : '#e03131';
-      card.innerHTML = '<b>' + esc(r.job) + '</b><span>' + (r.finished ? 'Finished ' + fmt(parse(r.finished)) : 'Finish date not recorded') + ' · ' +
-        (pct !== null ? esc(r.actual_h) + ' of ' + esc(r.est_h) + ' h (' + pct + '%)' : 'hours not recorded') + '</span>' +
-        '<span>' + (r.completed_by ? 'Completed by ' + esc(r.completed_by) : 'Completed by: not recorded yet, so no points') +
-        (p !== null && r.completed_by ? ' <i class="pt" style="background:' + col + '">' + p + ' pts</i>' : '') + '</span>';
-      const sc = el('div'); card.appendChild(sc);
-      buildCelebration(sc, { name: r.completed_by, within: within && !!r.completed_by, others: pool, reduce, aria: r.job + ' finished' });
-      if (r.note) card.appendChild(el('span', 'muted', esc(r.note)));
-      box.appendChild(card);
-    });
-    if (!rows.length) box.textContent = 'No finished jobs recorded yet.';
+    const lb = document.getElementById('leaderboard');
+    if (!lb) return;
     buildLeaderboard(lb, rows, CREW.filter((n) => !/^Labour|^Dan B$|^Jonte$/.test(n)));
     document.getElementById('ptsNote').textContent = 'Points: finishing at or under the estimated hours is 5. Over the hours, up to 50% over, is 3. 50% or more over is 1. Points add up job by job. Hours are the estimated and used hours in Simpro for each job.';
-    const fn = document.getElementById('finNote'); if (fn) fn.textContent = 'On hours: the finisher sits back with a drink while everyone applauds. Over hours: just the applause.';
   }).catch(() => {});
 })();
