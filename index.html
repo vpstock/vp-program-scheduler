@@ -101,11 +101,9 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
   </header>
 <section class="card" id="calendar">
     <h2>Calendar, November 2026 to January 2027</h2>
-    <p class="muted">Built from the November WIP sheet, the builder programs found and the Fantech fire station schedule. Dashed boxes are proposed dates and not yet confirmed. Open the sections below for the hours, programs and crew behind these dates.</p>
+    <p class="muted">Built from the November WIP sheet, the builder programs found and the Fantech fire station schedule. Dashed boxes are proposed dates and not yet confirmed. The More information tab has the hours, programs and crew behind these dates.</p>
     <div class="calapp" data-draw="calendar" data-source="cal_events">—</div>
-  </section>
-<h2 class="morehd">More information</h2>
-<p class="muted" style="margin-top:-12px">Click a heading to open it.</p>
+    <div id="moreinfo" style="display:none;flex-direction:column;gap:var(--cds-gap-md)">
 <details class="card more" id="summary"><summary>Where the programs stand</summary>
     <div class="kpis">
       <div class="kpi"><span class="muted">Jobs with hours loaded</span><b data-draw="kpi" data-source="summary" data-field="jobs">—</b></div>
@@ -237,6 +235,9 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
       <li>Rough-in hours are mechanical only. Croydon is 119 h and Templestowe 90 h; the electrical hours are left out. Used hours on those two jobs may still include electrical. Both stations are done, with 4 h for Kei at Templestowe on Sat 7 Nov.</li>
     </ul>
   </details>
+    </div>
+  </section>
+
 </div>
 
 
@@ -432,8 +433,6 @@ dash.draw('calendar', (el) => {
 
   function render() {
     el.replaceChildren();
-    const [yy, mm] = MONTHS[ui.m];
-    const mStart = new Date(yy, mm, 1), mEnd = new Date(yy, mm + 1, 0);
 
     // Month tabs
     const tabs = mk('div', 'tabs'); tabs.setAttribute('role', 'tablist');
@@ -445,7 +444,17 @@ dash.draw('calendar', (el) => {
       b.onclick = () => { ui.m = mi; ui.pick = null; render(); };
       tabs.appendChild(b);
     });
+    const xb = mk('button', 'tab'); xb.type = 'button'; xb.setAttribute('role', 'tab');
+    xb.setAttribute('aria-selected', String(ui.m === 3));
+    xb.append(mk('b', '', 'More information'), mk('small', '', 'hours, programs, crew'));
+    xb.onclick = () => { ui.m = 3; ui.pick = null; render(); };
+    tabs.appendChild(xb);
     el.appendChild(tabs);
+    const mInfo = document.getElementById('moreinfo');
+    if (mInfo) mInfo.style.display = ui.m === 3 ? 'flex' : 'none';
+    if (ui.m === 3) return;
+    const [yy, mm] = MONTHS[ui.m];
+    const mStart = new Date(yy, mm, 1), mEnd = new Date(yy, mm + 1, 0);
 
     const body = mk('div', 'fade'); body.style.cssText = 'display:flex;flex-direction:column;gap:var(--cds-gap-md);padding-top:var(--cds-gap-md)';
     el.appendChild(body);
