@@ -34,6 +34,17 @@
     '<circle cx="16.3" cy="18" r="1.3" fill="#14181e"/><circle cx="23.7" cy="18" r="1.3" fill="#14181e"/>' +
     '<path d="M16.6 22.2Q20 25.2 23.4 22.2" stroke="' + (p.beard ? '#fff' : '#14181e') + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
     p.hair + '</g><circle cx="20" cy="20" r="19.4" fill="none" stroke="#0a1a4d" stroke-opacity=".35"/>';
+
+  // Head only (no round avatar background): ears, face, beard or stubble, eyes, smile and hat or hair
+  const headParts = (p) =>
+    '<circle cx="10.6" cy="19" r="2.2" fill="' + p.skin + '"/><circle cx="29.4" cy="19" r="2.2" fill="' + p.skin + '"/>' +
+    '<ellipse cx="20" cy="18" rx="9.6" ry="11" fill="' + p.skin + '"/>' +
+    (p.stubble ? '<path d="M11 21Q12 29 20 29Q28 29 29 21Q25 26 20 26Q15 26 11 21Z" fill="#000" opacity=".16"/>' : '') +
+    (p.beard ? '<path d="M10.8 19.5Q10.5 31 20 31Q29.5 31 29.2 19.5Q27 26.5 20 26.5Q13 26.5 10.8 19.5Z" fill="#adb5bd"/><path d="M16 23.4Q20 22 24 23.4" stroke="#868e96" stroke-width="1.6" fill="none" stroke-linecap="round"/>' : '') +
+    '<circle cx="16.3" cy="18" r="1.3" fill="#14181e"/><circle cx="23.7" cy="18" r="1.3" fill="#14181e"/>' +
+    '<path d="M16.6 22.2Q20 25.2 23.4 22.2" stroke="' + (p.beard ? '#fff' : '#14181e') + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+    p.hair;
+  window.headInner = (name) => headParts(PEOPLE[name] || GENERIC);
   window.faceInner = (name) => inner(PEOPLE[name] || GENERIC);
   window.faceSVG = (name, px) => '<svg class="face" viewBox="0 0 40 40" width="' + px + '" height="' + px + '" role="img" aria-label="' + name + '">' + faceInner(name) + '</svg>';
 
@@ -57,8 +68,8 @@
       (hv ? '<path d="M-12 -30H12M-12 -24H12" stroke="#e9ecef" stroke-width="2.2"/>' : '<rect x="-12.5" y="-20" width="25" height="5" rx="2" fill="#0a1a4d" fill-opacity=".25"/>') +
       '<rect x="-12.5" y="-17" width="25" height="4" fill="#0a1a4d" fill-opacity=".35"/>' +
       '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>' +
-      '<rect x="-3.5" y="-50" width="7" height="6" fill="' + sk + '"/>' +
-      '<g transform="translate(-20,-88) scale(1)">' + faceInner(name) + '</g>' +
+      '<rect x="-4" y="-56" width="8" height="12" rx="2" fill="' + sk + '"/><rect x="-4" y="-50" width="8" height="2.5" fill="#000" opacity=".12"/>' +
+      '<g transform="translate(-22,-85) scale(1.1)">' + headInner(name) + '</g>' +
       '</g>';
   };
   window.figSVG = (name, h) => '<svg class="fig" viewBox="-26 -90 70 92" height="' + h + '" width="' + Math.round(h * 70 / 92) + '" role="img" aria-label="' + name + '">' + figInner(name) + '</svg>';
