@@ -185,7 +185,7 @@ dash.draw('calendar', (el) => {
     const idx = MONTHS.findIndex(([y, m]) => now.getFullYear() === y && now.getMonth() === m);
     ui.m = idx >= 0 ? idx : 0;
   }
-  const vis = (r) => ui.kinds.has(r.kind) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
+  const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person));
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
   function render() {
