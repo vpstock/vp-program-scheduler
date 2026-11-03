@@ -85,7 +85,7 @@
       box.appendChild(card);
     });
     if (!rows.length) box.textContent = 'No finished jobs recorded yet.';
-    buildLeaderboard(lb, rows, CREW.filter((n) => !/^Labour/.test(n)));
+    buildLeaderboard(lb, rows, CREW.filter((n) => !/^Labour|^Dan B$|^Jonte$/.test(n)));
     document.getElementById('ptsNote').textContent = 'Points: finishing at or under the estimated hours is 5. Over the hours, up to 50% over, is 3. 50% or more over is 1. Points add up job by job. Hours are the estimated and used hours in Simpro for each job.';
     const fn = document.getElementById('finNote'); if (fn) fn.textContent = 'On hours: the finisher sits back with a drink while everyone applauds. Over hours: just the applause.';
   }).catch(() => {});
