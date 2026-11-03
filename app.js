@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103p. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103q. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -787,6 +787,22 @@ dash.draw('calendar', (el) => {
         if (!noSplit) det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. A stage is only ticked once the crew say it is complete. Red stripes show scheduled time running past the end of a stage.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
       } else {
         det.appendChild(mk('span', 'muted', 'No dates on the calendar for this job yet.'));
+        // Progress for a job that is not scheduled yet: Simpro hours and what the crew have posted in Slack.
+        const shU = (ok('stage_hours') || []).find((x) => same(x.job, ui.sel));
+        const msU = (ok('milestones') || []).filter((x) => same(x.job, ui.sel));
+        const eU = shU ? ['demo_h', 'rough_h', 'fit_h', 'comm_h', 'unsplit_h'].reduce((t, k) => t + (+shU[k] || 0), 0) : 0;
+        const tkU = msU.filter((x) => /^task:/i.test(x.milestone)).map((x) => ({ label: String(x.milestone).replace(/^task:\s*/i, ''), status: x.status }));
+        if (tkU.length) {
+          det.appendChild(mk('span', 'muted', 'Site progress from the job channel'));
+          const tw = mk('div', 'trackwrap'); det.appendChild(tw);
+          buildSurveyTrack(tw, { items: tkU, walkers: [], color: jobColor(ui.sel), reduce: window.matchMedia('(prefers-reduced-motion: reduce)').matches, aria: ui.sel + ' site progress', unit: 'items' });
+          det.appendChild(mk('span', 'muted', 'From the Slack job channel posts (last updated ' + (msU.map((x) => x.as_of).filter(Boolean).sort().pop() || '') + '). Nothing is scheduled for the rest yet.'));
+        }
+        if (shU && eU > 0) {
+          const uU = +shU.used_h || 0, pcU = Math.round(uU / eU * 100);
+          det.appendChild(mk('span', 'muted', 'Estimate from the Simpro job (' + shU.simpro + '): ' + eU + ' h. Hours used to date in Simpro (' + String(shU.basis).replace(/^.*file\s*/i, '').replace(/\s*\(.*/, '') + ', not yet split by stage): ' + uU + ' h (' + pcU + '%), ' + Math.max(0, eU - uU) + ' h left.'));
+          const hbU = mk('div', 'daybar'); const hfU = document.createElement('i'); hfU.style.width = Math.min(100, pcU) + '%'; hfU.style.background = pcU > 100 ? '#e03131' : '#2b9348'; hbU.appendChild(hfU); det.appendChild(hbU);
+        }
       }
       const w = wipFor(ui.sel);
       if (w) {
