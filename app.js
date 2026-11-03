@@ -630,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103v. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103w. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -707,9 +707,9 @@ dash.draw('calendar', (el) => {
         const finRow = (ok('finished') || []).find((x) => same(x.job, ui.sel));
         if (finRow) {
           const fp = pointsFor(finRow.est_h, finRow.actual_h);
-          det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + shortD(parseD(finRow.finished)) : '') + ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' + (fp !== null && finRow.completed_by ? ', ' + fp + (fp === 1 ? ' point' : ' points') + ' for ' + finRow.completed_by : '')));
+          det.appendChild(mk('span', 'muted', 'Finished' + (finRow.finished ? ' ' + shortD(parseD(finRow.finished)) : '') + (finRow.est_h ? ', ' + finRow.actual_h + ' of ' + finRow.est_h + ' h' : '') + (fp !== null && finRow.completed_by && !/^FS\d/i.test(finRow.job) ? ', ' + fp + (fp === 1 ? ' point' : ' points') + ' for ' + finRow.completed_by : '')));
           const fw = mk('div', 'trackwrap'); det.appendChild(fw);
-          buildCelebration(fw, { name: finRow.completed_by, within: fp === 5 && !!finRow.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' });
+          buildCelebration(fw, { name: finRow.completed_by, within: (fp === 5 || /^yes$/i.test(finRow.beer || '')) && !!finRow.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' });
         }
         const jhs = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
         const estAll = sh ? ['demo_h', 'rough_h', 'fit_h', 'comm_h', 'unsplit_h'].reduce((t, k) => t + (+sh[k] || 0), 0) : 0;
@@ -753,6 +753,8 @@ dash.draw('calendar', (el) => {
             det.appendChild(mk('span', 'muted', 'Airflow test progress'));
             const aw = mk('div', 'trackwrap'); det.appendChild(aw);
             buildAirflowTrack(aw, { steps: stp, walkers: crewOf({ label: 'Urv', note: '' }), color: jobColor(ui.sel), reduce, aria: ui.sel + ' airflow test progress' });
+            const fr = (ok('finished') || []).find((x) => same(x.job, ui.sel));
+            if (fr && stp.every((s) => /done/i.test(s.status))) { det.appendChild(mk('span', 'muted', 'Finished' + (fr.finished ? ' ' + shortD(parseD(fr.finished)) : '') + (fr.completed_by ? ', ' + fr.completed_by + ' closed it out. Small jobs are not on the points scoreboard.' : ''))); const fw2 = mk('div', 'trackwrap'); det.appendChild(fw2); buildCelebration(fw2, { name: fr.completed_by, within: !!fr.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' }); }
           }
           const rs = ents.filter((r) => r.kind !== 'program');
           let tot = 0, dn = 0;

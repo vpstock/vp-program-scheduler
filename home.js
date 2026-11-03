@@ -87,7 +87,7 @@
   d3.csv('data/finished.csv?t=' + Date.now(), { cache: 'no-store' }).then((rows) => {
     const lb = document.getElementById('leaderboard');
     if (!lb) return;
-    buildLeaderboard(lb, rows, CREW.filter((n) => !/^Labour|^Dan B$|^Jonte$/.test(n)));
-    document.getElementById('ptsNote').textContent = 'Points: finishing at or under the estimated hours is 5. Over the hours, up to 50% over, is 3. 50% or more over is 1. Points add up job by job. Hours are the estimated and used hours in Simpro for each job.';
+    buildLeaderboard(lb, rows.filter((r) => !/^FS\d/i.test(r.job) && r.est_h), CREW.filter((n) => !/^Labour|^Dan B$|^Jonte$/.test(n)));
+    document.getElementById('ptsNote').textContent = 'Points: finishing at or under the estimated hours is 5. Over the hours, up to 50% over, is 3. 50% or more over is 1. Points add up job by job, on project jobs only. Fire stations and small jobs are not scored. Hours are the estimated and used hours in Simpro for each job.';
   }).catch(() => {});
 })();
