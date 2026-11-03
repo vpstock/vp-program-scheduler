@@ -74,12 +74,14 @@
     const legsSit = '<g class="legs"><path d="M-4 -18H12" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><path d="M12 -18V-3" stroke="#0a1a4d" stroke-width="6.5" stroke-linecap="round"/><rect x="7" y="-5" width="11" height="5.5" rx="2.5" fill="#3b2a1a"/></g>';
     const legs = o.sit ? legsSit : legsStand;
     const leftArm = o.clap
-      ? '<g class="arm"><path d="M-11 -39L-3 -31" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle class="cl-l" cx="-1.5" cy="-31" r="3.4" fill="' + sk + '"/></g>'
+      ? ''
       : (o.up ? '' : '<g class="arm"><path d="M-11 -39L-16 -22" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle cx="-16.5" cy="-19.5" r="3.4" fill="' + sk + '"/></g>');
     const drink = '<path d="M11 -39L21 -37L25 -47" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="25.5" cy="-48" r="3.6" fill="' + sk + '"/>' +
       '<rect x="22" y="-64" width="10" height="15" rx="2" fill="#f5b301" stroke="#14181e" stroke-width="1.2"/><rect x="22" y="-67" width="10" height="5" rx="2.5" fill="#fff" stroke="#14181e" stroke-width="1"/><path d="M24.5 -60V-52M29.5 -60V-52" stroke="#fff" stroke-width="1" opacity=".6"/>';
     const rightArm = o.clap
-      ? '<g class="rarm2"><path d="M11 -39L3 -31" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/><circle class="cl-r" cx="1.5" cy="-31" r="3.4" fill="' + sk + '"/></g>'
+      ? '<g class="cl-l"><path d="M-11 -41L-19 -32L-4 -47" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-2.5" cy="-48" r="4.2" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".8"/></g>' +
+        '<g class="cl-r"><path d="M11 -41L19 -32L4 -47" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="2.5" cy="-48" r="4.2" fill="' + sk + '" stroke="#0a1a4d" stroke-width=".8"/></g>' +
+        '<path class="clfx" d="M-9 -58L-12 -62M0 -60V-65M9 -58L12 -62" stroke="#f08c00" stroke-width="1.6" stroke-linecap="round"/>'
       : o.drink ? drink
       : (o.up ? '<path d="M-11 -41L-20 -62L-18 -82M11 -41L20 -62L18 -82" stroke="' + sh + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="-18" cy="-85" r="3.6" fill="' + sk + '"/><circle cx="18" cy="-85" r="3.6" fill="' + sk + '"/>' : '<g class="rarm"><path d="M11 -39L20 -26" stroke="' + sh + '" stroke-width="6" stroke-linecap="round"/>' + (TOOLS[name] || GENERIC_TOOL) + '<circle cx="21" cy="-25" r="3.6" fill="' + sk + '"/></g>');
     return '<g class="figure">' +

@@ -257,8 +257,8 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .celeb{width:100%;height:auto;display:block;overflow:visible}
 @keyframes cheer{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .psp .cheer{animation:cheer .6s ease-in-out infinite}
-@keyframes clapl{from{transform:translateX(0)}to{transform:translateX(-5px)}}
-@keyframes clapr{from{transform:translateX(0)}to{transform:translateX(5px)}}
+@keyframes clapl{from{transform:translateX(0)}to{transform:translateX(-6px)}}
+@keyframes clapr{from{transform:translateX(0)}to{transform:translateX(6px)}}
 .psp .cl-l{animation:clapl .32s ease-in-out infinite alternate}
 .psp .cl-r{animation:clapr .32s ease-in-out infinite alternate}
 @keyframes sip{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
@@ -279,3 +279,6 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .lb small{grid-column:3 / span 2;color:#6b7688;font-size:11.5px}
 .psp .daybar{height:14px;border-radius:7px;background:#dfe6f1;border:2px solid #0a1a4d;overflow:hidden}
 .psp .daybar i{display:block;height:100%}
+@keyframes clfx{0%,45%{opacity:0}50%,100%{opacity:1}}
+.psp .clfx{animation:clfx .64s steps(1) infinite}
+@media (prefers-reduced-motion:reduce){.psp .clfx{animation:none!important}}
