@@ -165,7 +165,8 @@ dash.draw('fantechtable', (tb) => fillTable(tb, ok('fantech_sched'), ['station',
 const KIND = {
   program: { name: 'Builder program', c: '#0b4fd4' },
   fantech: { name: 'Fantech fire station', c: '#12aef4' },
-  proposed: { name: 'Proposed from Simpro hours', c: 'var(--color-fg-muted)', dash: true },
+  roster: { name: 'Crew roster (Schedule Calendar)', c: '#7a4fd4' },
+  proposed: { name: 'Proposed estimate', c: 'var(--color-fg-muted)', dash: true },
   pending: { name: 'Dates pending', c: 'var(--color-warn)', dash: true },
   claim: { name: 'Progress claim', c: 'var(--color-ok)' }
 };
