@@ -443,6 +443,7 @@ dash.draw('calendar', (el) => {
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isFire = /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) || ents.some((r) => r.kind === 'fantech');
         const isLC = /459 Little Collins/i.test(ui.sel);
+        const isSmall = !isFire && !isLC && !!sh && (+sh.demo_h || 0) + (+sh.rough_h || 0) + (+sh.fit_h || 0) + (+sh.comm_h || 0) === 0 && (+sh.unsplit_h || 0) > 0 && (+sh.unsplit_h || 0) <= 40;
         if (isLC) {
           // 459 Little Collins St: Levels 3, 4, 8, 9, 10 and 11, then commissioning
           const ms = (ok('milestones') || []).filter((x) => /459/i.test(x.job));
@@ -450,6 +451,15 @@ dash.draw('calendar', (el) => {
           const comm = status['Commissioning'] || '';
           buildLevelsTrack(th, { levels: [3, 4, 8, 9, 10, 11], status, commissioning: comm, walkers: crew, color: jobColor(ui.sel), reduce, aria: ui.sel + ' progress by level' });
           if (!ms.length) det.appendChild(mk('span', 'muted', 'No level progress has been recorded yet, so the crew start at Level 3. Progress is added from Matt B\'s site posts.'));
+        } else
+        if (isSmall) {
+          // Small job: no rough-in, fit-off or commissioning stages. Just rostered days and the Simpro hours.
+          th.remove();
+          const rs = ents.filter((r) => r.kind !== 'program');
+          let tot = 0, dn = 0;
+          rs.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x) || isoD(r.s) === isoD(r.e)) { tot++; if (x < today0) dn++; } });
+          det.appendChild(mk('span', 'muted', 'Small job, so there are no rough-in, fit-off or commissioning stages. ' + (tot ? dn + ' of ' + tot + ' rostered ' + (tot === 1 ? 'day' : 'days') + ' done.' : 'No rostered days yet.')));
+          if (tot) { const db = mk('div', 'daybar'); const df = document.createElement('i'); df.style.width = Math.round(dn / tot * 100) + '%'; df.style.background = jobColor(ui.sel); db.appendChild(df); det.appendChild(db); }
         } else
         if (isFire) {
           // Fire stations: no rough-in, fit-off or commissioning. Progress is by bay and by day.
