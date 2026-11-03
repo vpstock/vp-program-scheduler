@@ -89,162 +89,13 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 <div class="psp">
   <header>
     <h1>Project program scheduler</h1>
-    <p class="muted">Victorian Projects. Prepared for Joy. Hours are labour hours, not calendar days. <span id="asof"></span></p>
+    <p class="muted">Victorian Projects. <span id="asof"></span></p>
   </header>
-
-  <section class="card" id="summary">
-    <h2>Where the programs stand</h2>
-    <div class="kpis">
-      <div class="kpi"><span class="muted">Jobs with hours loaded</span><b data-draw="kpi" data-source="summary" data-field="jobs">—</b></div>
-      <div class="kpi"><span class="muted">Hours allowed (Simpro)</span><b data-draw="kpi" data-source="summary" data-field="hours">—</b></div>
-      <div class="kpi"><span class="muted">Programs found</span><b data-draw="kpi" data-source="summary" data-field="found">—</b></div>
-      <div class="kpi"><span class="muted">Jobs with no program</span><b data-draw="kpi" data-source="summary" data-field="missing">—</b></div>
-    </div>
-    <p>Jobs marked "None found" have no program file in the SharePoint job folders or the email searched so far. Flagstaff Lane has been requested from the builder.</p>
-  </section>
-
-  <section class="card" id="stages">
-    <h2>How long each stage takes</h2>
-    <p class="muted">Hours are from Simpro (read 3 Nov). Rough-in is mechanical rough-in services only, so the fire station electrical hours are left out. Days assume a crew of 2 (1 for Freshwater Place, 3 for 459 Little Collins) at 7.6 hours a day. Change the crew and the days change with it. Hours are not split where Simpro has a single line.</p>
-    <div class="legend"><span style="--c:var(--cds-chart-1, #0b4fd4)">Rough-in</span><span style="--c:var(--cds-chart-2, #12aef4)">Fit-off</span><span style="--c:var(--cds-chart-3, #0a1a4d)">Commissioning</span></div>
-    <div class="bars" data-draw="stagebars" data-source="stage_days">—</div>
-    <div class="scroll">
-      <table data-source="stage_days" data-row-key="job">
-        <thead><tr>
-          <th data-field="job">Job</th>
-          <th data-field="simpro">Simpro</th>
-          <th class="n" data-field="demo_h">Demo h</th>
-          <th class="n" data-field="rough_h">Rough-in h</th>
-          <th class="n" data-field="rough_d">Rough-in days</th>
-          <th class="n" data-field="fit_h">Fit-off h</th>
-          <th class="n" data-field="fit_d">Fit-off days</th>
-          <th class="n" data-field="comm_h">Comm. h</th>
-          <th class="n" data-field="comm_d">Comm. days</th>
-          <th class="n" data-field="unsplit_h">Unsplit h</th>
-          <th class="n" data-field="used_h">Used h</th>
-          <th data-field="basis">Note</th>
-        </tr></thead>
-        <tbody data-draw="stagetable"></tbody>
-      </table>
-    </div>
-    <p class="muted">Cut out is not a stage in the Estimating Guideline. It appears in builder programs (for example Austin HSB "Services cut outs" and Monash ICA "Electrical cutout"), so it is shown in the program table below. Tell me if you meant something else.</p>
-  </section>
 
   <section class="card" id="calendar">
     <h2>Calendar, November 2026 to January 2027</h2>
-    <p class="muted">Built from the November WIP sheet, the builder programs found and the Fantech fire station schedule. Where a job has no program, dates are proposed from the Simpro hours and shown dashed. Rough-in means mechanical rough-in services only. Electrical is done by the subcontract electrician and is not counted.</p>
+    <p class="muted">Built from the November WIP sheet, the builder programs found and the Fantech fire station schedule. Dashed boxes are proposed dates and not yet confirmed.</p>
     <div class="calapp" data-draw="calendar" data-source="cal_events">—</div>
-  </section>
-
-  <section class="card" id="wipnov">
-    <h2>November jobs from the WIP</h2>
-    <p class="muted">Every live job on the November WIP sheet. Jobs with no hours in Simpro and no builder program cannot be scheduled yet and are marked as such. Completed jobs are left out. Service jobs and the other Fantech stations on the sheet are not dated here.</p>
-    <div class="scroll">
-      <table data-source="wip_nov" data-row-key="job_no">
-        <thead><tr>
-          <th data-field="job_no">Job</th>
-          <th data-field="job">Name</th>
-          <th data-field="builder">Builder</th>
-          <th data-field="this_month">On the WIP this month</th>
-          <th data-field="claim_day">Claim day</th>
-          <th data-field="dates">Program dates</th>
-        </tr></thead>
-        <tbody data-draw="wiptable"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="card" id="fantech">
-    <h2>Fantech fire stations</h2>
-    <p class="muted">Finish date is worked out from the start date and the bay rule, counting working days and skipping Victorian public holidays. The rule is 1 bay 3 days, then 2 more days for each extra bay. Where the schedule already has a finish date it is compared against the rule.</p>
-    <div class="scroll">
-      <table data-source="fantech_sched" data-row-key="station">
-        <thead><tr>
-          <th data-field="station">Station</th>
-          <th data-field="name">Name</th>
-          <th data-field="district">District</th>
-          <th class="n" data-field="bays">Bays</th>
-          <th class="n" data-field="days">Days</th>
-          <th data-field="start">Start</th>
-          <th data-field="finish_rule">Finish by rule</th>
-          <th data-field="finish_given">Finish on schedule</th>
-          <th data-field="status">Status</th>
-          <th data-field="check">Check</th>
-        </tr></thead>
-        <tbody data-draw="fantechtable"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="card" id="programs">
-    <h2>Construction programs found</h2>
-    <p class="muted">Dates are the builder's, taken from the program files. Outdated folders were not used.</p>
-    <div class="scroll">
-      <table data-source="programs" data-row-key="job">
-        <thead><tr>
-          <th data-field="job">Job</th>
-          <th data-field="status">Status</th>
-          <th data-field="rough_in">Rough-in</th>
-          <th data-field="fit_off">Fit-off</th>
-          <th data-field="cut_out">Cut out</th>
-          <th data-field="commissioning">Commissioning</th>
-          <th data-field="program_start">Starts</th>
-          <th data-field="program_finish">Finishes</th>
-        </tr></thead>
-        <tbody data-draw="programtable"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <div class="grid2">
-    <section class="card" id="guideline">
-      <h2>Guideline hours per item</h2>
-      <p class="muted">Estimating Guideline, current hours, before difficulty factor (1.0, 1.2 or 1.5). Proposed changes in the 19 Oct review are not applied.</p>
-      <div class="scroll">
-        <table data-source="guideline" data-row-key="item">
-          <thead><tr>
-            <th data-field="item">Item</th>
-            <th class="n" data-field="demo_h">Demo</th>
-            <th class="n" data-field="rough_h">Rough-in</th>
-            <th class="n" data-field="fit_h">Fit-off</th>
-            <th class="n" data-field="comm_h">Comm.</th>
-          </tr></thead>
-          <tbody data-draw="guidetable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card" id="crew">
-      <h2>Who is working with us</h2>
-      <p class="muted">From Mat's 3 Nov programming agenda.</p>
-      <div class="scroll">
-        <table data-source="crew" data-row-key="name">
-          <thead><tr>
-            <th data-field="name">Name</th>
-            <th data-field="role">Role</th>
-            <th data-field="current_work">Current work</th>
-          </tr></thead>
-          <tbody data-draw="crewtable"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <section class="card" id="open">
-    <h2>To confirm before dates go in the Labour Planner</h2>
-    <ul>
-      <li>Stage hours do not match between Simpro and the costing sheets for Anytime Fitness (72 h against 52.45 h) and 459 Little Collins (865 h against 1082.25 h).</li>
-      <li>Swan St IGA has no commissioning or site set up hours. Simpro has no site set up cost centre on any job.</li>
-      <li>Simpro shows 0 hours used on most jobs, so I cannot tell what has started. St Augustine's PS and Freshwater Place show as fully invoiced.</li>
-      <li>Toolern Vale, Department of Education, Austin Health and Sanamethod are complete, so they need no program. Austin HSB stays in the program table for reference only.</li>
-      <li>Allan is named on the Swan St IGA crew but is not on your list. Fernando is back in January.</li>
-      <li>Email was searched for the first 50 "construction program" results only. Flagstaff Lane is still waiting on GRN.</li>
-      <li>Fantech stations: Greensborough, Tullamarine, Templestowe and Croydon are done but their finish dates are still blank on the schedule. Richmond, Morwell and Shepparton finish dates differ from the bay rule (see the Fantech table).</li>
-      <li>Northern Trust L12 rough-in starts Mon 9 Nov. The finish of Fri 27 Nov is my assumption (the builder allowed 15 working days). The builder had it finishing 18 Nov.</li>
-      <li>Dates in dashed boxes are proposed from Simpro hours (7.6 h a day, crew as shown in the stage table). Crew clashes between jobs are not checked. Swan St IGA and 459 Little Collins are still waiting on work schedules from the builders, and 459 Little Collins runs on one Simpro line so its stages are not split.</li>
-      <li>Not scheduled because Simpro has no hours and there is no program: TSA Bentleigh (after the 4 to 6 Nov rough-in), Rangebank PS, 55 Brunswick St, V/Line Ballarat East, Flagstaff Lane, The Basin, 4 Miriam Court and the service jobs. Freshwater Place shows as fully invoiced so is left off.</li>
-      <li>Rough-in hours are mechanical only. Croydon is 119 h and Templestowe 90 h; the electrical hours are left out. Used hours on those two jobs may still include electrical. Both stations are done, with 4 h for Kei at Templestowe on Sat 7 Nov.</li>
-    </ul>
   </section>
 </div>
 
@@ -565,7 +416,7 @@ dash.draw('calendar', (el) => {
   render();
 });
 
-dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov']);
+dash.start(['cal_events']);
 </script>
 </body>
 </html>
