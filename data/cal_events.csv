@@ -1,11 +1,7 @@
 job,label,start,end,kind,note
-459 Little Collins St,Matt B on site (roster),2026-11-02,2026-11-02,roster,"Matt B, with labour hire (IGA / 459 Little Collins). Source: Schedule Calendar, November Schedule 26."
 Anytime Fitness,Urv on site (roster),2026-11-02,2026-11-02,roster,"Roster says Anytime Fitness Murrumbeena. Other papers say Caulfield East, so confirm the site. Nothing else rostered for this job in November. Source: Schedule Calendar, November Schedule 26."
-Swan St IGA,Dan on site (roster),2026-11-02,2026-11-02,roster,"Dan. Labour hire on IGA / 459 Little Collins 2 to 6 Nov. Source: Schedule Calendar, November Schedule 26."
 Anytime Fitness,Survey (Urv with Mat),2026-11-03,2026-11-03,program,Survey due from midday.
 368 Smith St Collingwood,Urv (roster),2026-11-04,2026-11-04,roster,"Urv. Source: Schedule Calendar, November Schedule 26."
-459 Little Collins St,Matt B on site (roster),2026-11-04,2026-11-09,roster,"Matt B 4, 5, 6 and 9 Nov, with labour hire 4 to 6 Nov. No one rostered after 9 Nov yet. Plaster dates per level still owed by Jack. Source: Schedule Calendar, November Schedule 26."
-Swan St IGA,Dan on site (roster),2026-11-04,2026-11-13,roster,"Dan every day. Labour hire 4 to 6 Nov, Dan B 12 to 13 Nov. Non-return dampers due on site Wed 4 Nov. Source: Schedule Calendar, November Schedule 26."
 TSA Bentleigh,Rough-in starts (Labourly),2026-11-04,2026-11-06,pending,Labourly Wed 4 Nov 8am then Thu and Fri 7am. Waiting on Josh to confirm. No hours loaded in Simpro so the rest cannot be scheduled.
 CHES Fab Lab,L3 fit-off and commissioning,2026-11-05,2026-11-09,program,Builder contract program.
 Monash Uni,"Level 4, Kei and Jonte (roster)",2026-11-05,2026-11-05,roster,"Roster says Monash Un (Kei) and Monash Uni Level 4 (Jonte). Not matched to CL12 kitchenettes or ICA, so confirm. Source: Schedule Calendar, November Schedule 26."
@@ -19,7 +15,6 @@ CHES Fab Lab,Matt B (roster shows ???),2026-11-10,2026-11-10,roster,"Matt B. The
 Northern Trust L12,Urv on site (roster),2026-11-13,2026-11-13,roster,"Urv. Nobody rostered 16 to 25 Nov yet; builder program has L12 rough-in to 18 Nov. Source: Schedule Calendar, November Schedule 26."
 Progress claims,55 Brunswick intended claim,2026-11-15,2026-11-15,claim,WIP note: send intended payment claim every 15th. 15 Nov is a Sunday.
 FS03 Carlton,Fantech fire station (3 bays),2026-11-16,2026-11-24,fantech,"From the Fantech schedule. Crew on the November roster: Kei, Tandy, Dan B (Tandy at trade school Thu 19 Nov)."
-Swan St IGA,Dan on site (roster),2026-11-17,2026-11-25,roster,"Dan every day (on leave Mon 16 Nov). No one rostered after 25 Nov yet. Work schedule still owed to Hans. Source: Schedule Calendar, November Schedule 26."
 Progress claims,Claims due 25th,2026-11-25,2026-11-25,claim,Per WIP: St Augustine's PS; Rangebank PS; Queen of Peace; Eildon Rd; Monash ICA; 55 Brunswick St; Flagstaff Lane; The Basin; Miriam Court variations. Claim days for Dec and Jan not confirmed so not plotted.
 Progress claims,Claims due 30th,2026-11-30,2026-11-30,claim,Per WIP: 4 Miriam Court; Swan St IGA; 459 Little Collins St.
 FS39 Port Melbourne,Fantech fire station (2 bays),2026-12-01,2026-12-07,fantech,From the Fantech schedule.
@@ -36,3 +31,11 @@ Northern Trust L13,Fit-off,2027-01-19,2027-01-25,program,"Builder program says 1
 Northern Trust L13,Commissioning,2027-01-25,2027-01-27,program,Builder preliminary program: L13 commissioning 25 to 27 Jan.
 FS26 Croydon,"Kei and Tandy (roster, Dan B also)",2026-11-02,2026-11-02,roster,"FRV Croydon on the November roster. Kei, Tandy and Dan B. Joy's earlier note says Croydon is done, but the roster has it to Fri 6 Nov: confirm. Source: Schedule Calendar, November Schedule 26."
 FS26 Croydon,"Kei and Tandy (roster, Dan B also)",2026-11-04,2026-11-06,roster,"FRV Croydon on the November roster, Wed 4 to Fri 6 Nov (Kei is split with Monash Uni on Thu 5 Nov). Kei, Tandy and Dan B. Joy's earlier note says Croydon is done: confirm. Source: Schedule Calendar, November Schedule 26."
+459 Little Collins St,Matt B and labour hire (roster),2026-11-02,2026-11-02,roster,"Matt B with labour hire. Source: Schedule Calendar, November Schedule 26."
+459 Little Collins St,Matt B and labour hire (roster),2026-11-04,2026-11-06,roster,"Matt B with labour hire, Wed 4 to Fri 6 Nov. Source: Schedule Calendar, November Schedule 26."
+459 Little Collins St,Matt B on site (roster),2026-11-09,2026-11-09,roster,"Matt B, Mon 9 Nov. No one rostered after 9 Nov yet. Plaster dates per level still owed by Jack. Source: Schedule Calendar, November Schedule 26."
+Swan St IGA,Dan and labour hire (roster),2026-11-02,2026-11-02,roster,"Dan with labour hire. Source: Schedule Calendar, November Schedule 26."
+Swan St IGA,Dan and labour hire (roster),2026-11-04,2026-11-06,roster,"Dan every day, with labour hire Wed 4 to Fri 6 Nov. Non-return dampers due on site Wed 4 Nov. Source: Schedule Calendar, November Schedule 26."
+Swan St IGA,Dan on site (roster),2026-11-09,2026-11-11,roster,"Dan every day. Source: Schedule Calendar, November Schedule 26."
+Swan St IGA,Dan and Dan B (roster),2026-11-12,2026-11-13,roster,"Dan every day, Dan B Thu 12 and Fri 13 Nov. Source: Schedule Calendar, November Schedule 26."
+Swan St IGA,Dan on site (roster),2026-11-17,2026-11-25,roster,"Dan every day (on leave Mon 16 Nov). No one rostered after 25 Nov yet. Work schedule still owed to Hans. Source: Schedule Calendar, November Schedule 26."
