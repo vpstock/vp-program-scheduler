@@ -202,6 +202,9 @@ dash.draw('calendar', (el) => {
   const saveManual = () => { try { localStorage.setItem(CREW_KEY, JSON.stringify(manual)); } catch (e) { /* storage blocked */ } };
   const mkManual = (m) => ({ job: m.job, label: 'Crew added: ' + m.person, start: m.date, end: m.date, kind: 'roster', note: m.person + '. Added on the planner.', i: -1, key: 'manual|' + m.job + '|' + m.date + '|' + m.person, moved: 0, status: (moves['manual|' + m.job + '|' + m.date + '|' + m.person] || {}).status || '', deleted: false, manual: true, s: parseD(m.date), e: parseD(m.date), base: baseJob(m.job) });
   manual.forEach((m) => all.push(mkManual(m)));
+  // A booking that was changed after some of its days had passed keeps those days as a fixed 'past' piece.
+  const mkPast = (r, p) => ({ ...r, start: p.start, end: p.end, s: parseD(p.start), e: parseD(p.end), key: r.key + '|past', i: -1, moved: 0, status: '', deleted: false, pastPiece: true, base: r.base });
+  all.slice().forEach((r) => { const ed = moves[r.key]; if (ed && ed.past) all.push(mkPast(r, ed.past)); });
   let items = all.filter((r) => !r.deleted);
   // Activity log: every change made on the planner, newest first. Kept in this browser only.
   const LOG_KEY = 'vp-sched-log-v1';
@@ -216,6 +219,20 @@ dash.draw('calendar', (el) => {
   const rng = (s, e) => (isoD(s) === isoD(e) ? shortD(s) : shortD(s) + ' to ' + shortD(e));
   const setEdit = (r, patch) => {
     const oS = r.s, oE = r.e, oSt = r.status || '', oDel = !!r.deleted;
+    let splitPast = null;
+    if ((patch.start || patch.end) && !patch.deleted && !patch.status) {
+      const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
+      const nd = (s, b) => Math.round((parseD(s) - b) / 86400000);
+      if (r.e < tdy) { toast('Days that have passed cannot be changed.'); return; }
+      if (r.s < tdy) {
+        // Only today and the days after it move. The days already gone stay where they were.
+        const dS = patch.start ? nd(patch.start, r.s) : 0, dE = patch.end ? nd(patch.end, r.e) : 0;
+        if (!dS && !dE) return;
+        const ns = addDays(tdy, Math.max(0, dS)); let ne = addDays(r.e, dE); if (ne < ns) ne = ns;
+        splitPast = { start: isoD(r.s), end: isoD(addDays(tdy, -1)) };
+        patch = Object.assign({}, patch, { start: isoD(ns), end: isoD(ne), past: splitPast });
+      }
+    }
     const ed = Object.assign({}, moves[r.key] || {}, patch);
     const same0 = (!ed.start || ed.start === r.start) && (!ed.end || ed.end === r.end);
     if (same0) { delete ed.start; delete ed.end; }
@@ -227,11 +244,12 @@ dash.draw('calendar', (el) => {
     r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || '';
     r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
     r.deleted = !!e2.deleted;
+    if (splitPast && !all.some((x) => x.key === r.key + '|past')) all.push(mkPast(Object.assign({}, r, { start: r.start, end: r.end }), splitPast));
     items = all.filter((x) => !x.deleted);
     const who = r.job + ' · ' + r.label;
     if (r.deleted && !oDel) logAct('Deleted', r.base, 'Deleted from the planner: ' + who + ' (' + rng(oS, oE) + ').');
     else if (!r.deleted && oDel) logAct('Restored', r.base, 'Put back on the planner: ' + who + '.');
-    if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.'));
+    if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.') + (splitPast ? ' Days before today (' + rng(parseD(splitPast.start), parseD(splitPast.end)) + ') were left as they were.' : ''));
     if ((r.status || '') !== oSt) logAct('Status', r.base, who + ': ' + (r.status ? STATUS[r.status] : 'status cleared') + '.');
   };
   // Move the later items of the same job by the same number of days (the job's dates follow the one you changed).
@@ -434,7 +452,7 @@ dash.draw('calendar', (el) => {
     tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule' + (nDel ? ' (' + nDel + ' deleted)' : '') + '. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
     if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
-      rs.onclick = () => { logAct('Reset', '', 'Put everything back to the original schedule (date, status and delete changes cleared).'); moves = {}; saveMoves(); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
+      rs.onclick = () => { logAct('Reset', '', 'Put everything back to the original schedule (date, status and delete changes cleared).'); moves = {}; saveMoves(); for (let q = all.length - 1; q >= 0; q--) if (all[q].pastPiece) all.splice(q, 1); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
       tip.appendChild(rs);
     }
     body.appendChild(tip);
@@ -643,7 +661,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104a. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104b. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
