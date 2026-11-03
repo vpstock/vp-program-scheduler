@@ -356,3 +356,5 @@ body.pdragging{cursor:grabbing;user-select:none}
 .psp .logtbl .lt{color:#6b7688}
 .psp .logtbl .lk{font-weight:600}
 @media (max-width:700px){.psp .logtbl{grid-template-columns:1fr}}
+
+.psp .chip.off{display:flex;align-items:center;gap:4px;background:#eceff3;color:#4a5568;border:1px dashed #aeb6c4;border-left:4px solid #aeb6c4;border-radius:6px;padding:2px 6px;font-size:12px;cursor:default}

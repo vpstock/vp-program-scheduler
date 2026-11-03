@@ -458,6 +458,11 @@ dash.draw('calendar', (el) => {
         if (inM && clashDay[isoD(day)]) { cell.classList.add('clash'); cell.appendChild(mk('span', 'clashtag', 'Overlap: ' + clashDay[isoD(day)].map((c) => c.person).join(', '))); }
         if (inM && (HOL.includes(isoD(day)) || inBreak(day)) && day.getDay() % 6 !== 0) cell.appendChild(mk('span', 'hol', offLabel(day)));
         if (inM) {
+          // Crew days off (trade school, leave) from data/crew_off.csv
+          if (ui.job === 'all') (ok('crew_off') || []).filter((o) => o.date === isoD(day) && (!ui.person || o.person === ui.person)).forEach((o) => {
+            const oc = mk('span', 'chip off'); oc.insertAdjacentHTML('afterbegin', faceSVG(o.person, 16) + ' '); oc.append(o.person + ' · ' + o.reason); oc.title = o.person + ': ' + o.reason + ' (not available for jobs)';
+            cell.appendChild(oc);
+          });
           items.filter(vis).forEach((r) => {
             if (day < r.s || day > r.e) return;
             const single = isoD(r.s) === isoD(r.e);
@@ -625,7 +630,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103h. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103i. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
