@@ -153,7 +153,7 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 
 /* Home page */
 .psp.home{gap:var(--cds-gap-lg,24px)}
-.psp .hero{position:relative;overflow:hidden;border-radius:16px;padding:32px 28px 92px;color:#fff;background:linear-gradient(120deg,#0a1a4d,#0b4fd4 70%,#12aef4);box-shadow:0 8px 24px rgba(10,26,77,.25)}
+.psp .hero{position:relative;overflow:hidden;border-radius:16px;padding:32px 28px 120px;color:#fff;background:linear-gradient(120deg,#0a1a4d,#0b4fd4 70%,#12aef4);box-shadow:0 8px 24px rgba(10,26,77,.25)}
 .psp .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:24px 24px}
 .psp .hero h1{color:#fff;font-size:clamp(28px,5vw,44px);margin:4px 0 8px}
 .psp .hero p{color:#e6eeff;margin:0;max-width:60ch}
@@ -161,11 +161,11 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .heroText{position:relative}
 .psp .heroFan{position:absolute;right:20px;top:18px;width:84px;height:84px;opacity:.9}
 .psp .spinfan{animation:spin 1.4s linear infinite;transform-origin:40px 40px}
-.psp .heroDuct{position:absolute;left:0;right:0;bottom:0;height:70px}
+.psp .heroDuct{position:absolute;left:0;right:0;bottom:0;height:100px}
 .psp .ductline{position:absolute;left:0;right:0;bottom:0;height:18px;background:repeating-linear-gradient(90deg,#dfe6f1 0 98px,#8a97ab 98px 100px);border-top:3px solid #0a1a4d;box-shadow:inset 0 -4px 0 rgba(10,26,77,.2)}
 .psp .ductline::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 26px,rgba(18,174,244,.9) 26px 34px,transparent 34px 60px);opacity:.7;animation:ductflow 1.6s linear infinite}
-.psp .heroWalk{position:absolute;left:0;right:0;bottom:16px;height:48px;overflow:hidden}
-.psp .hw{position:absolute;bottom:0;left:-60px;animation:heroWalk 16s linear infinite}
+.psp .heroWalk{position:absolute;left:0;right:0;bottom:18px;height:90px;overflow:hidden}
+.psp .hw{position:absolute;bottom:0;left:-60px;animation:heroWalk 16s linear infinite,hwjump 16s linear infinite}
 .psp .hw .face{border:2px solid #fff;border-radius:50%;background:#fff;animation:hwbob .5s ease-in-out infinite}
 @keyframes heroWalk{from{left:-60px}to{left:100%}}
 @keyframes hwbob{50%{transform:translateY(-4px)}}
@@ -198,3 +198,9 @@ body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(-
 .psp .brandlogo{height:104px;width:auto;display:block}
 .psp .brandname{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:26px;color:#fff}
 .psp .brandline{font-size:13px;line-height:1.4;color:#d6e4ff}
+
+.psp .obs{position:absolute;bottom:18px;left:calc(-60px + (100% + 60px) * var(--t) + 22px - var(--w) / 2);z-index:1;line-height:0}
+.psp .obs svg{display:block;overflow:visible}
+.psp .sparkg{animation:spark .5s steps(2,end) infinite}
+@keyframes spark{0%{opacity:1}50%{opacity:.1}100%{opacity:1}}
+@keyframes hwjump{0%{transform:translateY(0)}21.70%{transform:translateY(0px)}24.00%{transform:translateY(-36px)}26.30%{transform:translateY(0px)}42.70%{transform:translateY(0px)}45.00%{transform:translateY(-36px)}47.30%{transform:translateY(0px)}63.70%{transform:translateY(0px)}66.00%{transform:translateY(-36px)}68.30%{transform:translateY(0px)}81.70%{transform:translateY(0px)}84.00%{transform:translateY(-36px)}86.30%{transform:translateY(0px)}100%{transform:translateY(0)}}
