@@ -358,3 +358,7 @@ body.pdragging{cursor:grabbing;user-select:none}
 @media (max-width:700px){.psp .logtbl{grid-template-columns:1fr}}
 
 .psp .chip.off{display:flex;align-items:center;gap:4px;background:#eceff3;color:#4a5568;border:1px dashed #aeb6c4;border-left:4px solid #aeb6c4;border-radius:6px;padding:2px 6px;font-size:12px;cursor:default}
+.delbox{margin:8px 0;padding:8px 12px;border:1px solid #dfe4ec;border-radius:8px;background:#fff;font-size:13px}
+.delbox summary{cursor:pointer;font-weight:600;color:#0a1a4d}
+.delrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-top:1px solid #eef1f6}
+.toastbtn{margin-left:8px;padding:2px 10px;border:1px solid #fff;border-radius:6px;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}

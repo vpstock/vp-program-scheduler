@@ -279,7 +279,7 @@ dash.draw('calendar', (el) => {
     const del = document.createElement('button'); del.type = 'button'; del.className = 'cmbtn cmdel'; del.textContent = 'Delete from planner';
     del.onclick = () => {
       if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Click again to delete'; return; }
-      setEdit(r, { deleted: true }); if (ui.sel === r.base && !items.some((x) => x.base === r.base)) ui.sel = null; closeMenu(); rerender();
+      setEdit(r, { deleted: true }); if (ui.sel === r.base && !items.some((x) => x.base === r.base)) ui.sel = null; closeMenu(); rerender(); toastUndo('Deleted ' + r.job + ' (' + r.label + ').', () => { setEdit(r, { deleted: false }); rerender(); });
     };
     m.appendChild(del);
     const dsub = document.createElement('small'); dsub.textContent = 'Only removes it from this planner in this browser. Put everything back brings it back.'; m.appendChild(dsub);
@@ -333,6 +333,7 @@ dash.draw('calendar', (el) => {
     });
     el.addEventListener('click', (e) => { if (suppress) { e.preventDefault(); e.stopImmediatePropagation(); return; } if (onPlainClick) onPlainClick(e); });
   };
+  const toastUndo = (msg, fn) => { const t = mk('div', 'toast', msg + ' '); t.setAttribute('role', 'status'); const b = mk('button', 'toastbtn', 'Undo'); b.type = 'button'; b.onclick = () => { t.remove(); fn(); }; t.appendChild(b); document.body.appendChild(t); setTimeout(() => t.remove(), 12000); };
   const toast = (msg) => { const t = mk('div', 'toast', msg); t.setAttribute('role', 'status'); document.body.appendChild(t); setTimeout(() => t.remove(), 6000); };
   // Drop a crew face on a job for a day: refused if they are off or already on a job that day.
   const dropPerson = (p, job, d, row) => {
@@ -437,6 +438,18 @@ dash.draw('calendar', (el) => {
       tip.appendChild(rs);
     }
     body.appendChild(tip);
+    if (nDel) {
+      const dd = document.createElement('details'); dd.className = 'delbox';
+      const sm = document.createElement('summary'); sm.textContent = 'Deleted from the planner (' + nDel + '). Open to put one back.'; dd.appendChild(sm);
+      all.filter((r) => r.deleted).forEach((r) => {
+        const row = mk('div', 'delrow');
+        row.appendChild(mk('span', '', r.job + ' · ' + r.label + ' · ' + rng(parseD(r.start), parseD(r.end))));
+        const rb = mk('button', 'clr', 'Put back'); rb.type = 'button';
+        rb.onclick = () => { setEdit(r, { deleted: false }); render(); };
+        row.appendChild(rb); dd.appendChild(row);
+      });
+      body.appendChild(dd);
+    }
 
     // Grid
     const picked = ui.sel ? { base: ui.sel } : null;
@@ -630,7 +643,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261103x. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104a. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
