@@ -186,22 +186,26 @@ dash.draw('calendar', (el) => {
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const mkey = (r) => [r.job, r.label, r.start, r.end].join('|');
   const STATUS = { confirmed: 'Confirmed', discuss: 'To be discussed' };
-  const items = ev.map((r, i) => {
+  const all = ev.map((r, i) => {
     const k = mkey(r), ed = moves[k] || {};
     const s = parseD(ed.start || r.start), e = parseD(ed.end || r.end);
     const moved = Math.round((s - parseD(r.start)) / 86400000) || Math.round((e - parseD(r.end)) / 86400000);
-    return { ...r, i, key: k, moved, status: ed.status || '', s, e, base: baseJob(r.job) };
+    return { ...r, i, key: k, moved, status: ed.status || '', deleted: !!ed.deleted, s, e, base: baseJob(r.job) };
   });
+  let items = all.filter((r) => !r.deleted);
   const setEdit = (r, patch) => {
     const ed = Object.assign({}, moves[r.key] || {}, patch);
     const same0 = (!ed.start || ed.start === r.start) && (!ed.end || ed.end === r.end);
     if (same0) { delete ed.start; delete ed.end; }
     if (!ed.status) delete ed.status;
+    if (!ed.deleted) delete ed.deleted;
     if (Object.keys(ed).length) moves[r.key] = ed; else delete moves[r.key];
     saveMoves();
     const e2 = moves[r.key] || {};
     r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || '';
     r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
+    r.deleted = !!e2.deleted;
+    items = all.filter((x) => !x.deleted);
   };
   // Move the later items of the same job by the same number of days (the job's dates follow the one you changed).
   const cascade = (r, delta, from) => {
@@ -245,6 +249,13 @@ dash.draw('calendar', (el) => {
       st.appendChild(b);
     });
     m.appendChild(st);
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'cmbtn cmdel'; del.textContent = 'Delete from planner';
+    del.onclick = () => {
+      if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Click again to delete'; return; }
+      setEdit(r, { deleted: true }); if (ui.sel === r.base && !items.some((x) => x.base === r.base)) ui.sel = null; closeMenu(); rerender();
+    };
+    m.appendChild(del);
+    const dsub = document.createElement('small'); dsub.textContent = 'Only removes it from this planner in this browser. Put everything back brings it back.'; m.appendChild(dsub);
     document.body.appendChild(m); ctxMenu = m;
     const w = m.offsetWidth, hh = m.offsetHeight;
     m.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + 'px';
@@ -330,12 +341,13 @@ dash.draw('calendar', (el) => {
     }
 
     // Edits banner
-    const nEdit = items.filter((r) => r.moved || r.status).length;
+    const nDel = all.filter((r) => r.deleted).length;
+    const nEdit = all.filter((r) => r.moved || r.status || r.deleted).length;
     const tip = mk('div', 'movebar');
-    tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
+    tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule' + (nDel ? ' (' + nDel + ' deleted)' : '') + '. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
     if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
-      rs.onclick = () => { moves = {}; saveMoves(); items.forEach((r) => { r.moved = 0; r.status = ''; r.s = parseD(r.start); r.e = parseD(r.end); }); render(); };
+      rs.onclick = () => { moves = {}; saveMoves(); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
       tip.appendChild(rs);
     }
     body.appendChild(tip);
