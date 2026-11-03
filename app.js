@@ -365,20 +365,21 @@ dash.draw('calendar', (el) => {
           const fw = mk('div', 'trackwrap'); det.appendChild(fw);
           buildCelebration(fw, { name: finRow.completed_by, within: fp === 5 && !!finRow.completed_by, others: ['Tandy', 'Dan', 'Urv', 'Matt B', 'Dan B', 'Kei'], aria: ui.sel + ' finished' });
         }
-        const hr = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
-        if (hr) {
-          const u = +hr.used_h, e = +hr.est_h, pc = Math.round(u / e * 100);
-          det.appendChild(mk('span', 'muted', 'Hours worked to date from Simpro (' + hr.simpro_ref + ', as at ' + hr.as_of + '). Booked hours only, future scheduled time not counted: ' + u + ' of ' + e + ' h used (' + pc + '%), ' + Math.max(0, e - u) + ' h left.'));
+        const jhs = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
+        const estAll = sh ? ['demo_h', 'rough_h', 'fit_h', 'comm_h', 'unsplit_h'].reduce((t, k) => t + (+sh[k] || 0), 0) : 0;
+        if (sh && estAll > 0) {
+          const u = +sh.used_h || 0, e = estAll, pc = Math.round(u / e * 100), sc = jhs ? +jhs.sched_h || 0 : 0;
+          det.appendChild(mk('span', 'muted', 'Estimate from the Simpro job (' + sh.simpro + '): ' + e + ' h. Actual hours worked to date from the Simpro week view: ' + u + ' h (' + pc + '%), ' + Math.max(0, e - u) + ' h left' + (sc ? '. Scheduled ahead in the week view: ' + sc + ' h' : '') + '.'));
           const hb = mk('div', 'daybar'); const hf = document.createElement('i'); hf.style.width = Math.min(100, pc) + '%'; hf.style.background = pc > 100 ? '#e03131' : '#2b9348'; hb.appendChild(hf); det.appendChild(hb);
         }
         if (/IGA/i.test(ui.sel)) {
-          const endRow = ents.find((r) => /crew leaves/i.test(r.label));
           const ros = ents.filter((r) => r.kind === 'roster');
-          if (endRow && ros.length) {
-            const s0 = new Date(Math.min(...ros.map((r) => +r.s))), e0 = endRow.e, y0 = new Date(today0.getTime() - 86400000);
-            let tot = 0, dn = 0;
-            for (let x = new Date(s0); x <= e0; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) { tot++; if (x <= y0) dn++; }
-            det.appendChild(mk('span', 'muted', 'Program days on site (as at 28 Oct): ' + dn + ' of ' + tot + ' working days done. Crew leaves site ' + shortD(e0) + '.'));
+          if (ros.length) {
+            // Proposed allocated days: the rostered days in the Schedule Calendar (Quick Links > Schedule), not the builder program.
+            const y0 = new Date(today0.getTime() - 86400000);
+            let tot = 0, dn = 0, last = null;
+            ros.forEach((r) => { for (let x = new Date(r.s); x <= r.e; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1)) if (isWork(x)) { tot++; if (x <= y0) dn++; if (!last || x > last) last = x; } });
+            det.appendChild(mk('span', 'muted', 'Proposed days from the Schedule Calendar: ' + dn + ' of ' + tot + ' rostered days done, last rostered day ' + shortD(last) + '.'));
             const db = mk('div', 'daybar'); const dfill = document.createElement('i'); dfill.style.width = Math.round(dn / tot * 100) + '%'; dfill.style.background = jobColor(ui.sel); db.appendChild(dfill); det.appendChild(db);
           }
         }
@@ -411,11 +412,13 @@ dash.draw('calendar', (el) => {
         } else {
         let posUse = /anytime/i.test(ui.sel) ? 0 : sp.pos, hrPlan = 0;
         const hrow = (ok('job_hours') || []).find((x) => same(x.job, ui.sel) || (/iga/i.test(ui.sel) && /iga/i.test(x.job)));
-        if (hrow && hrow.stage && +hrow.stage_used_h >= 0 && sh) {
-          // Position from the hours in Simpro: worked to date, then scheduled ahead. Overlap only if the total passes the stage estimate.
-          const si = ['rough-in', 'fit-off', 'cut-out', 'commissioning'].indexOf(String(hrow.stage).toLowerCase());
-          const est = +[sh.rough_h, sh.fit_h, 0, sh.comm_h][si];
-          if (si >= 0 && est > 0) { posUse = si + (+hrow.stage_used_h) / est; hrPlan = si + ((+hrow.stage_used_h) + (+hrow.stage_sched_h || 0)) / est; }
+        const zoneH = sh ? [+sh.rough_h || 0, +sh.fit_h || 0, 0, +sh.comm_h || 0] : [0, 0, 0, 0];
+        if (sh && zoneH.reduce((t, v) => t + v, 0) > 0) {
+          // Position from Simpro hours: stage estimates from the job, hours worked from the week view, then hours scheduled ahead.
+          // Hours past the end of a stage carry into the next one, which shows as an overlap.
+          const toPos = (h) => { let cum = 0; for (let k = 0; k < 4; k++) { if (zoneH[k] > 0 && h <= cum + zoneH[k]) return k + (h - cum) / zoneH[k]; cum += zoneH[k]; } return 4; };
+          const used = +sh.used_h || 0, sched = hrow ? +hrow.sched_h || 0 : 0;
+          posUse = toPos(used); hrPlan = sched ? toPos(used + sched) : 0;
         }
         const stg = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
         const stDone = (nm) => jobMs.some((x) => new RegExp('^stage:\\s*' + nm, 'i').test(x.milestone) && /done/i.test(x.status));

@@ -1,6 +1,2 @@
-job,simpro_ref,est_h,used_h,as_of,stage,stage_used_h,stage_sched_h
-Swan Street IGA,Job 1672,490,136,2026-11-02,Rough-in,144,72
-FS 26 - Croydon,Job 1683,96,48,2026-11-02,,,
-459 Little Collins,Job 1680,865,294,2026-11-02,,,
-Brunswick Street,Job 1671,188,144.5,2026-11-02,,,
-Ballarat East,Job 1678,350,256.5,2026-11-02,,,
+job,sched_h,as_of,note
+Swan Street IGA,72,2026-11-03,Hours scheduled ahead in the Simpro week view (given by Joy 3 Nov)
