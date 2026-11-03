@@ -324,9 +324,14 @@ dash.draw('calendar', (el) => {
   const toast = (msg) => { const t = mk('div', 'toast', msg); t.setAttribute('role', 'status'); document.body.appendChild(t); setTimeout(() => t.remove(), 6000); };
   // Drop a crew face on a job for a day: refused if they are off or already on a job that day.
   const dropPerson = (p, job, d, row) => {
-    // Dropped on a booked item: add the person to every working day that item covers. Dropped on a one-day item or a week cell: that day only.
-    const days = []; const s0 = row ? row.s : d, e0 = row ? row.e : d;
-    for (let x = new Date(s0); x <= e0; x = addDays(x, 1)) if (isWork(x)) days.push(new Date(x));
+    // Dropped on a job: add the person to every working day that booking covers, plus every other day that week the job is on site.
+    // Also every other working day that week when the job is on site (other bookings of the same job).
+    const days = []; const seen = new Set(); const add = (x) => { if (isWork(x) && !seen.has(isoD(x))) { seen.add(isoD(x)); days.push(new Date(x)); } };
+    if (row) for (let x = new Date(row.s); x <= row.e; x = addDays(x, 1)) add(x);
+    else add(d);
+    const mon = addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay() + 6) % 7));
+    for (let n = 0; n < 6; n++) { const x = addDays(mon, n); if (items.some((r) => r.base === job && r.kind !== 'claim' && ['roster', 'fantech', 'program'].includes(r.kind) && r.s <= x && x <= r.e && (isoD(r.s) === isoD(r.e) || isWork(x)))) add(x); }
+    days.sort((p1, p2) => p1 - p2);
     if (!days.length) { toast(shortD(d) + ' is not a working day.'); return; }
     const done = [], skipped = [];
     days.forEach((x) => {
@@ -552,13 +557,13 @@ dash.draw('calendar', (el) => {
         } else {
           const pill = mk('button', 'wfree', 'Free'); pill.type = 'button'; pill.title = 'Drag ' + p + ' onto a job on ' + shortD(d);
           pill.style.cursor = 'grab';
-          pdrag(pill, p, (z) => { if (z.dataset.date === isoD(d)) assign(p, z.dataset.base, d); else toast('Drop ' + p + ' onto a job on ' + shortD(d) + '.'); }, (e5) => { pill.dataset.open = '1'; });
+          pdrag(pill, p, (z) => { if (z.dataset.date === isoD(d)) dropPerson(p, z.dataset.base, d); else toast('Drop ' + p + ' onto a job on ' + shortD(d) + '.'); }, (e5) => { pill.dataset.open = '1'; });
           pill.onclick = (e5) => {
             e5.stopPropagation(); closeMenu();
             const js = jobsOn(d); const m = document.createElement('div'); m.className = 'ctxmenu'; m.setAttribute('role', 'dialog');
             const h = document.createElement('strong'); h.textContent = p + ' on ' + shortD(d); m.appendChild(h);
             if (!js.length) { const s = document.createElement('small'); s.textContent = 'No jobs on that day.'; m.appendChild(s); }
-            js.forEach((j) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cmbtn'; b.textContent = j; b.onclick = () => { closeMenu(); assign(p, j, d); }; m.appendChild(b); });
+            js.forEach((j) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cmbtn'; b.textContent = j; b.onclick = () => { closeMenu(); dropPerson(p, j, d); }; m.appendChild(b); });
             document.body.appendChild(m); ctxMenu = m;
             const r0 = pill.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(r0.left, window.innerWidth - m.offsetWidth - 8)) + 'px'; m.style.top = Math.max(8, Math.min(r0.bottom + 4, window.innerHeight - m.offsetHeight - 8)) + 'px';
           };
