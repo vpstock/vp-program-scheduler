@@ -550,10 +550,16 @@ dash.draw('calendar', (el) => {
     body.appendChild(kp);
 
     // Overlaps: the same person on two jobs on one working day
-    const clashAll = findClashes(items, isWork, isEx);
-    const clashDay = {};
+    // Built after the calendar, from the boxes that are actually drawn, so a warning always has something to point at.
+    const clashDay = {}, drawn = [], cellByIso = {};
+    const alertHold = mk('div'); body.appendChild(alertHold);
+    const buildAlert = () => {
+    const pk = {};
+    drawn.forEach((sh) => sh.who.forEach((n) => { if (/^Labour/.test(n) || sh.part) return; const k = sh.iso + '|' + n; (pk[k] = pk[k] || new Set()).add(sh.added ? '(jobs added on the planner)' : sh.base); }));
+    const clashAll = Object.keys(pk).filter((k) => pk[k].size > 1).map((k) => { const [ds, n] = k.split('|'); return { date: parseD(ds), iso: ds, person: n, jobs: [...pk[k]] }; }).sort((x, y) => x.date - y.date || x.person.localeCompare(y.person));
     clashAll.forEach((c) => { (clashDay[c.iso] = clashDay[c.iso] || []).push(c); });
     const clashMonth = clashAll.filter((c) => c.date >= mStart && c.date <= mEnd);
+    Object.keys(clashDay).forEach((iso) => { const ce = cellByIso[iso]; if (ce) { ce.classList.add('clash'); ce.appendChild(mk('span', 'clashtag', 'Overlap: ' + clashDay[iso].map((c) => c.person).join(', '))); } });
     if (clashMonth.length) {
       const al = mk('div', 'alertbox');
       al.appendChild(mk('strong', '', 'Overlap warning: ' + clashMonth.length + (clashMonth.length === 1 ? ' double booking' : ' double bookings') + ' this month'));
@@ -573,8 +579,9 @@ dash.draw('calendar', (el) => {
         });
         ul.appendChild(li);
       });
-      al.appendChild(ul); body.appendChild(al);
+      al.appendChild(ul); alertHold.appendChild(al);
     }
+    };
 
     // Edits banner
     const nDel = all.filter((r) => r.deleted).length;
@@ -630,7 +637,7 @@ dash.draw('calendar', (el) => {
         const dHere = new Date(day);
         const cell = mk('div', 'day' + (inM ? '' : ' out') + (i > 4 ? ' wkend' : '') + (isoD(day) === todayIso ? ' today' : ''));
         cell.appendChild(mk('span', 'dn', String(day.getDate())));
-        if (inM && clashDay[isoD(day)]) { cell.classList.add('clash'); cell.appendChild(mk('span', 'clashtag', 'Overlap: ' + clashDay[isoD(day)].map((c) => c.person).join(', '))); }
+        if (inM) cellByIso[isoD(day)] = cell;
         if (inM && (HOL.includes(isoD(day)) || inBreak(day)) && day.getDay() % 6 !== 0) cell.appendChild(mk('span', 'hol', offLabel(day)));
         if (inM) {
           // Crew days off (trade school, leave) from data/crew_off.csv
@@ -712,6 +719,7 @@ dash.draw('calendar', (el) => {
             c.ondragleave = () => c.classList.remove('dropok');
             c.ondrop = (e5) => { if (!dragPerson) return; e5.preventDefault(); e5.stopPropagation(); c.classList.remove('dropok'); const p0 = dragPerson; dragPerson = null; dropPerson(p0, r.base, dHere, r); };
             cell.appendChild(c);
+            if (r.kind === 'roster' || r.kind === 'fantech' || r.base === IGA) drawn.push({ iso: isoD(dHere), base: r.base, who: grpAdd.length > 1 ? [...new Set(grpAdd.flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, r.base, dHere)) : crew, added: !!r.added, part: !!partHours(r) });
           });
         }
         if (inM) {
@@ -731,6 +739,7 @@ dash.draw('calendar', (el) => {
       }
       cal.appendChild(row);
     }
+    buildAlert();
     wrap.appendChild(cal); body.appendChild(wrap);
 
     // Weekly crew view: who is on which job each day. Crew already on a job (or off) are greyed and locked.
@@ -837,7 +846,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zb. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zc. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
