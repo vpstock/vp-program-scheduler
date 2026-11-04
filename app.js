@@ -814,6 +814,8 @@ dash.draw('calendar', (el) => {
     let dragCrew = null;
     const assign = (p, job, d, quiet) => {
       const m = { job, date: isoD(d), person: p };
+      // Putting someone back on a job and day clears any earlier "taken off" for that person, job and day.
+      if (excl.some((q) => q.person === p && q.job === baseJob(job) && q.date === isoD(d))) { excl = excl.filter((q) => !(q.person === p && q.job === baseJob(job) && q.date === isoD(d))); saveEx(); items = all.filter((x) => !x.deleted); }
       if (manual.some((x) => x.job === m.job && x.date === m.date && x.person === p)) return;
       manual.push(m); saveManual();
       const row = mkManual(m); delete moves[row.key]; saveMoves(); all.push(row); items = all.filter((x) => !x.deleted); if (!quiet) { logAct('Crew added', baseJob(job), p + ' added to ' + job + ' on ' + shortD(d) + '.'); render(); }
@@ -892,7 +894,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zf. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zg. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
