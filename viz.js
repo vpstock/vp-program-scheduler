@@ -499,7 +499,7 @@ window.partHours = (r) => {
   if (/half[\s-]?day/i.test(t)) return 3.8;
   return 0;
 };
-window.findClashes = function (rows, isWork) {
+window.findClashes = function (rows, isWork, isEx) {
   const out = [], seen = {};
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   // Part-day bookings (hours stated in the note) are small return jobs, so two of them on one day are not a double booking.
@@ -509,7 +509,7 @@ window.findClashes = function (rows, isWork) {
     const single = iso(r.s) === iso(r.e), who = window.crewOf(r).filter((n) => !/^Labour/.test(n));
     for (let d = new Date(r.s); d <= r.e; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
       if (!single && !isWork(d)) continue;
-      who.forEach((n) => { const k = iso(d) + '|' + n; (days[k] = days[k] || new Set()).add(r.added ? '(jobs added on the planner)' : (r.base || r.job)); });
+      who.filter((n) => !(isEx && isEx(n, r.base || r.job, d))).forEach((n) => { const k = iso(d) + '|' + n; (days[k] = days[k] || new Set()).add(r.added ? '(jobs added on the planner)' : (r.base || r.job)); });
     }
   });
   Object.keys(days).forEach((k) => {

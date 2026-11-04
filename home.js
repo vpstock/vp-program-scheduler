@@ -29,9 +29,10 @@
     const isWork = (d) => d.getDay() % 6 !== 0 && !HOL.includes(iso(d)) && !inBreak(d);
 
     // Overlap alert: the same person on two jobs on the same working day, from today on
+    let exL = []; try { exL = JSON.parse(localStorage.getItem('vp-sched-crewx-v1') || '[]') || []; } catch (e) { exL = []; }
     const alertBox = document.getElementById('clashAlert');
     if (alertBox) {
-      const cl = findClashes(ev, isWork).filter((c) => c.date >= today);
+      const cl = findClashes(ev, isWork, (p, base, d) => exL.some((x) => x.person === p && x.job === base && x.date === iso(d))).filter((c) => c.date >= today);
       if (cl.length) {
         const nMoved = Object.keys(moves).length;
         alertBox.hidden = false;

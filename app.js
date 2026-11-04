@@ -550,7 +550,7 @@ dash.draw('calendar', (el) => {
     body.appendChild(kp);
 
     // Overlaps: the same person on two jobs on one working day
-    const clashAll = findClashes(items, isWork);
+    const clashAll = findClashes(items, isWork, isEx);
     const clashDay = {};
     clashAll.forEach((c) => { (clashDay[c.iso] = clashDay[c.iso] || []).push(c); });
     const clashMonth = clashAll.filter((c) => c.date >= mStart && c.date <= mEnd);
@@ -822,7 +822,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104z. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104za. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
