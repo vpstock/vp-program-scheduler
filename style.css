@@ -370,3 +370,4 @@ body.pdragging{cursor:grabbing;user-select:none}
 .drawout{display:flex;flex-direction:column;gap:4px}
 .cmcc{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#333b47}.cmcc select{flex:1;padding:6px 8px;border:1px solid #dfe4ec;border-radius:8px;font:inherit}
 .cctag{display:block;font-size:9px;font-weight:600;color:#0a1a4d;background:#eef3ff;border-radius:4px;padding:0 4px;margin-top:2px;width:max-content}
+.grip{margin-left:auto;font-size:12px;color:#6b7688;cursor:grab;padding:2px 8px;border:1px dashed #dfe4ec;border-radius:8px;user-select:none}.jobinfo>summary{display:flex;align-items:center;gap:8px}.dragsec{opacity:.5}.dropsec{outline:2px dashed #0b4fd4;outline-offset:2px}

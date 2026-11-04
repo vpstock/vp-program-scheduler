@@ -722,7 +722,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104j. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104k. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -966,6 +966,29 @@ dash.draw('calendar', (el) => {
     jd.open = !!ui.jobOpen || !!ui.sel;
     jd.addEventListener('toggle', () => { ui.jobOpen = jd.open; });
     body.appendChild(jd);
+    // Job information sits above the crew bar by default. Drag either one by its grip to swap their order (saved in this browser).
+    const OKEY = 'vp-sched-order-v1';
+    let jobFirst = true; try { jobFirst = localStorage.getItem(OKEY) !== 'crew'; } catch (e6) { /* storage blocked */ }
+    if (jobFirst) body.insertBefore(jd, cb); else body.insertBefore(jd, cb.nextSibling);
+    let dragging = null;
+    const grip = (el, nm, host) => {
+      const g = mk('span', 'grip', '\u2807 Drag to move'); g.draggable = true; g.title = 'Drag to move ' + nm + ' above or below the other section';
+      g.addEventListener('dragstart', (ev) => { dragging = el; try { ev.dataTransfer.setData('text/plain', nm); ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setDragImage(el, 20, 20); } catch (e7) { /* drag image skipped */ } el.classList.add('dragsec'); });
+      g.addEventListener('dragend', () => { dragging = null; el.classList.remove('dragsec'); [jd, cb].forEach((x) => x.classList.remove('dropsec')); });
+      host.appendChild(g);
+    };
+    [jd, cb].forEach((el) => {
+      el.addEventListener('dragover', (ev) => { if (dragging && dragging !== el) { ev.preventDefault(); el.classList.add('dropsec'); } });
+      el.addEventListener('dragleave', () => el.classList.remove('dropsec'));
+      el.addEventListener('drop', (ev) => {
+        if (!dragging || dragging === el) return; ev.preventDefault(); el.classList.remove('dropsec');
+        jobFirst = dragging === jd; try { localStorage.setItem(OKEY, jobFirst ? 'job' : 'crew'); } catch (e8) { /* storage blocked */ }
+        if (jobFirst) body.insertBefore(jd, cb); else body.insertBefore(jd, cb.nextSibling);
+        logAct('Layout', '', (jobFirst ? 'Job information' : 'The crew bar') + ' moved to the top.');
+      });
+    });
+    grip(jd, 'Job information', jd.querySelector('summary'));
+    grip(cb, 'the crew bar', cb);
   }
   render();
 });
