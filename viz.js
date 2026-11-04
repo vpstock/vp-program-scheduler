@@ -509,7 +509,7 @@ window.findClashes = function (rows, isWork) {
     const single = iso(r.s) === iso(r.e), who = window.crewOf(r).filter((n) => !/^Labour/.test(n));
     for (let d = new Date(r.s); d <= r.e; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
       if (!single && !isWork(d)) continue;
-      who.forEach((n) => { const k = iso(d) + '|' + n; (days[k] = days[k] || new Set()).add(r.base || r.job); });
+      who.forEach((n) => { const k = iso(d) + '|' + n; (days[k] = days[k] || new Set()).add(r.added ? '(jobs added on the planner)' : (r.base || r.job)); });
     }
   });
   Object.keys(days).forEach((k) => {

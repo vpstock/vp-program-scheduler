@@ -376,3 +376,4 @@ body.pdragging{cursor:grabbing;user-select:none}
 .addf input,.addf select{padding:6px 8px;border:1px solid #dfe4ec;border-radius:8px;font:inherit;background:#fff}
 .addcrew{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:#333b47}.addcrew>span{width:100%}
 .addck{display:inline-flex;align-items:center;gap:4px}
+.chip.multijob{display:block;text-align:left}.mjhead{display:block;font-size:12px;margin:2px 0}.mjline{font-size:12px;line-height:1.3;padding:2px 4px 2px 6px;margin:3px 0;background:rgba(255,255,255,.6);border-radius:4px;cursor:pointer;white-space:normal}.mjname{font-weight:600}
