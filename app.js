@@ -202,6 +202,14 @@ dash.draw('calendar', (el) => {
   const saveManual = () => { try { localStorage.setItem(CREW_KEY, JSON.stringify(manual)); } catch (e) { /* storage blocked */ } };
   const mkManual = (m) => ({ job: m.job, label: 'Crew added: ' + m.person, start: m.date, end: m.date, kind: 'roster', note: m.person + '. Added on the planner.', i: -1, key: 'manual|' + m.job + '|' + m.date + '|' + m.person, moved: 0, status: (moves['manual|' + m.job + '|' + m.date + '|' + m.person] || {}).status || '', deleted: false, manual: true, s: parseD(m.date), e: parseD(m.date), base: baseJob(m.job) });
   manual.forEach((m) => all.push(mkManual(m)));
+  // Jobs and bookings added on the planner for work that is not on the list. Stored in this browser only.
+  const ADD_KEY = 'vp-sched-addjobs-v1';
+  let added = [];
+  try { added = JSON.parse(localStorage.getItem(ADD_KEY) || '[]') || []; } catch (e) { added = []; }
+  const saveAdded = () => { try { localStorage.setItem(ADD_KEY, JSON.stringify(added)); } catch (e) { /* storage blocked */ } };
+  const mkAdded = (a) => { const k = mkey(a), ed = moves[k] || {}; const s = parseD(ed.start || a.start), e = parseD(ed.end || a.end);
+    return { ...a, i: -1, key: k, added: true, moved: Math.round((s - parseD(a.start)) / 86400000) || Math.round((e - parseD(a.end)) / 86400000), status: ed.status || '', cc: ed.cc || '', deleted: !!ed.deleted, s, e, base: baseJob(a.job) }; };
+  added.forEach((a) => all.push(mkAdded(a)));
   // A booking that was changed after some of its days had passed keeps those days as a fixed 'past' piece.
   const mkPast = (r, p) => ({ ...r, start: p.start, end: p.end, s: parseD(p.start), e: parseD(p.end), key: r.key + '|past', i: -1, moved: 0, status: '', deleted: false, pastPiece: true, base: r.base });
   all.slice().forEach((r) => { const ed = moves[r.key]; if (ed && ed.past) all.push(mkPast(r, ed.past)); });
@@ -460,7 +468,51 @@ dash.draw('calendar', (el) => {
     const clr = mk('button', 'clr', 'Reset'); clr.type = 'button';
     clr.onclick = () => { ui.kinds = new Set(Object.keys(KIND)); ui.job = 'all'; ui.person = null; ui.sel = null; render(); };
     fl.append(sel, clr);
+    const addb = mk('button', 'clr addjobbtn', ui.addOpen ? 'Close add a job' : 'Add a job'); addb.type = 'button';
+    addb.onclick = () => { ui.addOpen = !ui.addOpen; render(); };
+    fl.appendChild(addb);
     body.appendChild(fl);
+    if (ui.addOpen) {
+      const af = mk('form', 'addjob'); af.setAttribute('aria-label', 'Add a job to the planner');
+      af.appendChild(mk('b', '', 'Add a job to the planner'));
+      af.appendChild(mk('small', 'muted', 'For work that is not on the list yet. It is kept in this browser only, like your other edits, and you can delete it from its right-click menu.'));
+      const fld = (lab, el) => { const l = mk('label', 'addf'); l.appendChild(mk('span', '', lab)); l.appendChild(el); af.appendChild(l); return el; };
+      const nm = document.createElement('input'); nm.type = 'text'; nm.required = true; nm.placeholder = 'Job name, for example 12 Smith St'; nm.setAttribute('list', 'addjobnames');
+      const dl = document.createElement('datalist'); dl.id = 'addjobnames'; jobs.forEach((j) => { const o = document.createElement('option'); o.value = j; dl.appendChild(o); });
+      fld('Job', nm); af.appendChild(dl);
+      const lb = document.createElement('input'); lb.type = 'text'; lb.required = true; lb.placeholder = 'What is happening, for example Rough-in';
+      fld('What', lb);
+      const st = document.createElement('input'); st.type = 'date'; st.required = true; fld('Start', st);
+      const fi = document.createElement('input'); fi.type = 'date'; fld('Finish (leave blank for one day)', fi);
+      const kd = document.createElement('select'); [['program', 'Builder program'], ['roster', 'Crew roster']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; kd.appendChild(o); });
+      fld('Type', kd);
+      const cc = document.createElement('select'); [['', 'Not set'], ['Demo works', 'Demo works'], ['Rough-in', 'Rough-in'], ['Cut-out', 'Cut-out (counts under fit-off)'], ['Fit-off', 'Fit-off'], ['Commissioning', 'Commissioning']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; cc.appendChild(o); });
+      fld('Cost centre', cc);
+      const crw = mk('div', 'addcrew'); crw.appendChild(mk('span', '', 'Crew (optional)'));
+      const cbs = CREW.map((n) => { const l = mk('label', 'addck'); const c = document.createElement('input'); c.type = 'checkbox'; c.value = n; l.appendChild(c); l.append(' ' + n); crw.appendChild(l); return c; });
+      const lhc = mk('label', 'addck'); const lhi = document.createElement('input'); lhi.type = 'checkbox'; lhc.appendChild(lhi); lhc.append(' Labour hire'); crw.appendChild(lhc);
+      af.appendChild(crw);
+      const nt = document.createElement('input'); nt.type = 'text'; nt.placeholder = 'Note (optional)'; fld('Note', nt);
+      const go = mk('button', 'cmbtn', 'Add to planner'); go.type = 'submit'; af.appendChild(go);
+      af.onsubmit = (ev2) => {
+        ev2.preventDefault();
+        const job = nm.value.trim(), what = lb.value.trim(); if (!job || !what || !st.value) return;
+        let s1 = st.value, e1 = fi.value || st.value; if (e1 < s1) { const t = s1; s1 = e1; e1 = t; }
+        const who = cbs.filter((c) => c.checked).map((c) => c.value).concat(lhi.checked ? ['labour hire'] : []);
+        const label = what + (kd.value === 'roster' && who.length ? ' (' + who.join(', ') + ')' : '');
+        const row = { job, label, start: s1, end: e1, kind: kd.value, note: (who.length ? who.join(', ') + '. ' : '') + (nt.value.trim() ? nt.value.trim() + '. ' : '') + 'Added on the planner.' };
+        if (all.some((x) => x.key === mkey(row))) { toast('That job, wording and dates are already on the planner.'); return; }
+        added.push(row); saveAdded();
+        const r2 = mkAdded(row); all.push(r2);
+        if (cc.value) setEdit(r2, { cc: cc.value });
+        items = all.filter((x) => !x.deleted);
+        logAct('Added', r2.base, 'Added to the planner: ' + job + ' · ' + label + ' (' + rng(r2.s, r2.e) + ').');
+        ui.addOpen = false; ui.sel = null; render();
+        const mi = MONTHS.findIndex(([y, m]) => r2.s <= new Date(y, m + 1, 0) && r2.e >= new Date(y, m, 1));
+        toast('Added ' + job + '.' + (mi >= 0 && mi !== ui.m ? ' It shows on the ' + new Date(MONTHS[mi][0], MONTHS[mi][1], 1).toLocaleString('en-AU', { month: 'long' }) + ' page.' : ''));
+      };
+      body.appendChild(af);
+    }
 
     // Month summary
     const mItems = items.filter((r) => inMonth(r, ui.m) && vis(r));
@@ -728,7 +780,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104p. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104q. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
