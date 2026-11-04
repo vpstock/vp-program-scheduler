@@ -309,20 +309,26 @@ dash.draw('calendar', (el) => {
     ccs.onchange = () => { setEdit(r, { cc: ccs.value }); closeMenu(); rerender(); };
     ccw.appendChild(ccs); m.appendChild(ccw);
     // Take one person off this booking (today and later days only; days that have passed stay as they were)
-    const crewHere = (r.kind === 'roster' || r.kind === 'fantech') ? crewOf(r) : [];
+    let crewHere = (r.kind === 'roster' || r.kind === 'fantech') ? crewOf(r) : [];
+    // Swan St IGA shows one combined box per day, so its crew comes from the roster rows for that day.
+    if (!crewHere.length && r.base === IGA && dDay) crewHere = [...new Set(all.filter((x) => !x.deleted && x.base === IGA && x.kind === 'roster' && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, IGA, dDay));
     if (crewHere.length) {
       const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
       const cx = document.createElement('div'); cx.className = 'cmcrew';
       const ct = document.createElement('small'); ct.textContent = 'Take someone off this job (today and later days only)'; cx.appendChild(ct);
       const daysFor = (from) => { const out = []; for (let d = new Date(Math.max(+from, +tdy)); d <= r.e; d = addDays(d, 1)) if (isWork(d) || isoD(r.s) === isoD(r.e)) out.push(new Date(d)); return out; };
-      crewHere.forEach((p) => {
+      const lhs = crewHere.filter((q) => /^Labour hire/.test(q));
+      const groups = [];
+      if (lhs.length > 1) groups.push(['Labour hire (all)', lhs]);
+      crewHere.forEach((q) => groups.push([q, [q]]));
+      groups.forEach(([p, names]) => {
         const line = document.createElement('div'); line.className = 'cmcrewrow'; line.appendChild(document.createTextNode(p + ': '));
         const apply = (days, what) => {
-          const add = days.filter((d) => !isEx(p, r.base, d)); if (!add.length) { toast('Nothing to take ' + p + ' off. Days that have passed cannot be changed.'); return; }
-          add.forEach((d) => excl.push({ job: r.base, person: p, date: isoD(d) })); saveEx();
+          const add = days.filter((d) => names.some((nm) => !isEx(nm, r.base, d))); if (!add.length) { toast('Nothing to take ' + p + ' off. Days that have passed cannot be changed.'); return; }
+          add.forEach((d) => names.forEach((nm) => { if (!isEx(nm, r.base, d)) excl.push({ job: r.base, person: nm, date: isoD(d) }); })); saveEx();
           logAct('Crew removed', r.base, p + ' taken off ' + r.job + ' (' + rng(add[0], add[add.length - 1]) + ', ' + add.length + (add.length === 1 ? ' day' : ' days') + ').');
           items = all.filter((x) => !x.deleted); closeMenu(); rerender();
-          toastUndo(p + ' taken off ' + r.job + ' (' + what + ').', () => { excl = excl.filter((q) => !(q.job === r.base && q.person === p && add.some((d) => isoD(d) === q.date))); saveEx(); logAct('Crew restored', r.base, p + ' put back on ' + r.job + '.'); rerender(); });
+          toastUndo(p + ' taken off ' + r.job + ' (' + what + ').', () => { excl = excl.filter((q) => !(q.job === r.base && names.includes(q.person) && add.some((d) => isoD(d) === q.date))); saveEx(); logAct('Crew restored', r.base, p + ' put back on ' + r.job + '.'); rerender(); });
         };
         if (dDay && dDay >= tdy && dDay >= r.s && dDay <= r.e) { const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'cmbtn'; b1.textContent = 'This day'; b1.onclick = () => apply([new Date(dDay)], shortD(dDay)); line.appendChild(b1); }
         const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'cmbtn'; b2.textContent = 'All remaining days'; b2.onclick = () => apply(daysFor(dDay && dDay >= tdy && dDay >= r.s ? dDay : r.s), 'remaining days'); line.appendChild(b2);
@@ -698,7 +704,7 @@ dash.draw('calendar', (el) => {
     });
     const lh = mk('span', 'wc wl', 'Labour hire');
     tbl.appendChild(lh);
-    wdays.forEach((d) => { const cell = mk('span', 'wc wlh'); const on = activeRows(d).filter((r) => /labour hire/i.test((r.label || '') + ' ' + (r.note || ''))).map((r) => r.base); cell.textContent = [...new Set(on)].join(', ') || ''; tbl.appendChild(cell); });
+    wdays.forEach((d) => { const cell = mk('span', 'wc wlh'); const on = activeRows(d).filter((r) => /labour hire/i.test((r.label || '') + ' ' + (r.note || '')) && !(isEx('Labour hire 1', r.base, d) && isEx('Labour hire 2', r.base, d))).map((r) => r.base); cell.textContent = [...new Set(on)].join(', ') || ''; tbl.appendChild(cell); });
     offOnFn = offOn; assignFn = assign; renderFn = render;
     const sc = mk('div', 'wscroll'); sc.appendChild(tbl); wsec.appendChild(sc);
     body.appendChild(wsec);
@@ -722,7 +728,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104m. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104n. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
