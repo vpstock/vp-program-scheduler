@@ -114,7 +114,7 @@
     if (/\bMatt B\b/.test(t)) out.push('Matt B');
     if (/\bJonte\b/i.test(t)) out.push('Jonte');
     if (/\bDan B\b|\bDaniel B/.test(t)) out.push('Dan B');
-    if (/labour hire|labourly/i.test(t)) out.push('Labour hire 1', 'Labour hire 2');
+    if (/labour hire|labourly/i.test(t)) { const lm = t.match(/labour hire\s*([12])\b/i); if (lm && /^Crew added/.test(r.label || '')) out.push('Labour hire ' + lm[1]); else out.push('Labour hire 1', 'Labour hire 2'); }
     return out;
   };
 

@@ -624,10 +624,14 @@ dash.draw('calendar', (el) => {
               igaCrew = [...new Set(items.filter((x) => x.base === IGA && x.kind === 'roster' && x.s <= day && day <= x.e).flatMap((x) => crewOf(x).filter((q) => !isEx(q, IGA, day))))];
             }
             if (r.manual && hostFor(r.base, day)) return;
-            const extra = (!r.manual && hostFor(r.base, day) === r) ? manual.filter((m) => baseJob(m.job) === r.base && m.date === isoD(day) && !isEx(m.person, r.base, day)).map((m) => m.person) : [];
+            // No booking for this job on this day: everyone added to it share one box instead of one box each.
+            const mGrp = r.manual ? items.filter((x) => x.manual && x.base === r.base && x.s <= day && day <= x.e && !crewOf(x).every((q) => isEx(q, r.base, day))) : [];
+            if (r.manual && mGrp.length && mGrp[0] !== r) return;
+            const extraM = r.manual ? [...new Set(mGrp.slice(1).flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, r.base, day)) : [];
+            const extra = r.manual ? extraM : (!r.manual && hostFor(r.base, day) === r) ? manual.filter((m) => baseJob(m.job) === r.base && m.date === isoD(day) && !isEx(m.person, r.base, day)).map((m) => m.person) : [];
             const exNames = crewOf(r).filter((q) => isEx(q, r.base, day)), crewD = crewOf(r).filter((q) => !isEx(q, r.base, day));
             if (ui.person && !crewD.includes(ui.person) && !extra.includes(ui.person) && !igaCrew.includes(ui.person)) return;
-            const labD = (igaLabel || r.label) + (exNames.length ? ' (minus ' + exNames.join(', ') + ')' : '');
+            const labD = (igaLabel || (r.manual && extraM.length ? 'Crew added: ' + [...crewD, ...extraM].join(', ') : r.label)) + (exNames.length ? ' (minus ' + exNames.join(', ') + ')' : '');
             const kd = KIND[r.kind] || { c: 'var(--color-fg-muted)', dash: true };
             const c = mk('button', 'chip' + (kd.dash ? ' dash' : '') + (picked && picked.base === r.base ? ' hl' : ''), r.kind === 'claim' ? r.label : r.job + ' · ' + labD);
             c.type = 'button';
@@ -782,7 +786,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104r. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104s. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
