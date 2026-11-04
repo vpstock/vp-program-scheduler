@@ -311,7 +311,7 @@ dash.draw('calendar', (el) => {
     // Take one person off this booking (today and later days only; days that have passed stay as they were)
     let crewHere = (r.kind === 'roster' || r.kind === 'fantech') ? crewOf(r) : [];
     // Program and other boxes carry no crew of their own, so the crew comes from the roster rows for that job and day (Swan St IGA is one combined box).
-    if (!crewHere.length && dDay) crewHere = [...new Set(all.filter((x) => !x.deleted && x.base === r.base && (x.kind === 'roster' || x.kind === 'fantech') && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, r.base, dDay));
+    if (dDay) crewHere = [...new Set(crewHere.concat(all.filter((x) => !x.deleted && x.base === r.base && (x.kind === 'roster' || x.kind === 'fantech') && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x))))].filter((q) => !isEx(q, r.base, dDay));
     if (crewHere.length) {
       const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
       const cx = document.createElement('div'); cx.className = 'cmcrew';
@@ -571,7 +571,7 @@ dash.draw('calendar', (el) => {
               igaCrew = [...new Set(items.filter((x) => x.base === IGA && x.kind === 'roster' && x.s <= day && day <= x.e).flatMap((x) => crewOf(x).filter((q) => !isEx(q, IGA, day))))];
             }
             if (r.manual && hostFor(r.base, day)) return;
-            const extra = (!r.manual && hostFor(r.base, day) === r) ? manual.filter((m) => baseJob(m.job) === r.base && m.date === isoD(day)).map((m) => m.person) : [];
+            const extra = (!r.manual && hostFor(r.base, day) === r) ? manual.filter((m) => baseJob(m.job) === r.base && m.date === isoD(day) && !isEx(m.person, r.base, day)).map((m) => m.person) : [];
             const exNames = crewOf(r).filter((q) => isEx(q, r.base, day)), crewD = crewOf(r).filter((q) => !isEx(q, r.base, day));
             if (ui.person && !crewD.includes(ui.person) && !extra.includes(ui.person) && !igaCrew.includes(ui.person)) return;
             const labD = (igaLabel || r.label) + (exNames.length ? ' (minus ' + exNames.join(', ') + ')' : '');
@@ -728,7 +728,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104o. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104p. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
