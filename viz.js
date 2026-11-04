@@ -491,10 +491,19 @@
 })();
 
 /* Overlaps: the same person on two different jobs on the same working day (roster and fire station rows only). */
+// Hours written in a booking's wording or note, for example "4 h", "2 hrs" or "half day". A booking with hours stated is a part-day job.
+window.partHours = (r) => {
+  const t = (r.label || '') + ' ' + (r.note || '');
+  const m = t.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\b(?!\s*overtime)/i);
+  if (m) return +m[1];
+  if (/half[\s-]?day/i.test(t)) return 3.8;
+  return 0;
+};
 window.findClashes = function (rows, isWork) {
   const out = [], seen = {};
   const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const act = rows.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s && r.e);
+  // Part-day bookings (hours stated in the note) are small return jobs, so two of them on one day are not a double booking.
+  const act = rows.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s && r.e && !window.partHours(r));
   const days = {};
   act.forEach((r) => {
     const single = iso(r.s) === iso(r.e), who = window.crewOf(r).filter((n) => !/^Labour/.test(n));

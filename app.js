@@ -493,6 +493,7 @@ dash.draw('calendar', (el) => {
       const lhc = mk('label', 'addck'); const lhi = document.createElement('input'); lhi.type = 'checkbox'; lhc.appendChild(lhi); lhc.append(' Labour hire'); crw.appendChild(lhc);
       af.appendChild(crw);
       const nt = document.createElement('input'); nt.type = 'text'; nt.placeholder = 'Note (optional)'; fld('Note', nt);
+      const hrs = document.createElement('input'); hrs.type = 'number'; hrs.min = '0'; hrs.step = '0.5'; hrs.placeholder = 'Hours, for a part-day return job'; fld('Hours (optional)', hrs);
       const go = mk('button', 'cmbtn', 'Add to planner'); go.type = 'submit'; af.appendChild(go);
       af.onsubmit = (ev2) => {
         ev2.preventDefault();
@@ -500,7 +501,7 @@ dash.draw('calendar', (el) => {
         let s1 = st.value, e1 = fi.value || st.value; if (e1 < s1) { const t = s1; s1 = e1; e1 = t; }
         const who = cbs.filter((c) => c.checked).map((c) => c.value).concat(lhi.checked ? ['labour hire'] : []);
         const label = what + (kd.value === 'roster' && who.length ? ' (' + who.join(', ') + ')' : '');
-        const row = { job, label, start: s1, end: e1, kind: kd.value, note: (who.length ? who.join(', ') + '. ' : '') + (nt.value.trim() ? nt.value.trim() + '. ' : '') + 'Added on the planner.' };
+        const row = { job, label, start: s1, end: e1, kind: kd.value, note: (who.length ? who.join(', ') + '. ' : '') + (nt.value.trim() ? nt.value.trim() + '. ' : '') + (+hrs.value > 0 ? hrs.value + ' h. ' : '') + 'Added on the planner.' };
         if (all.some((x) => x.key === mkey(row))) { toast('That job, wording and dates are already on the planner.'); return; }
         added.push(row); saveAdded();
         const r2 = mkAdded(row); all.push(r2);
@@ -647,6 +648,7 @@ dash.draw('calendar', (el) => {
               }, chipClick, '[data-day]');
               if (r.moved) { c.classList.add('moved'); c.title += ' (moved ' + (r.moved > 0 ? '+' : '') + r.moved + ' d from the schedule)'; }
               if (r.status) { c.classList.add('s-' + r.status); c.title += ' (' + STATUS[r.status] + ')'; c.insertAdjacentHTML('beforeend', r.status === 'confirmed' ? '<svg class="stbadge" viewBox="0 0 12 12" width="12" height="12" aria-label="Confirmed"><circle cx="6" cy="6" r="6" fill="#2b9348"/><path d="M3 6.2L5.2 8.3L9 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<b class="stbadge disc" title="To be discussed">To discuss</b>'); }
+              if (partHours(r)) { c.title += ' (part day, ' + partHours(r) + ' h from the note)'; c.insertAdjacentHTML('beforeend', '<b class="cctag hrtag">' + partHours(r) + ' h</b>'); }
               if (r.cc) { c.title += ' (' + r.cc + ')'; c.insertAdjacentHTML('beforeend', '<b class="cctag">' + r.cc + '</b>'); }
               c.oncontextmenu = (e4) => { e4.preventDefault(); openMenu(r, e4.clientX, e4.clientY, render, dHere); };
             }
@@ -780,7 +782,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104q. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104r. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
