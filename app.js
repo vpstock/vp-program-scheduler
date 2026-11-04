@@ -557,7 +557,22 @@ dash.draw('calendar', (el) => {
     if (clashMonth.length) {
       const al = mk('div', 'alertbox');
       al.appendChild(mk('strong', '', 'Overlap warning: ' + clashMonth.length + (clashMonth.length === 1 ? ' double booking' : ' double bookings') + ' this month'));
-      const ul = mk('ul'); clashMonth.slice(0, 10).forEach((c) => ul.appendChild(mk('li', '', c.person + ' is on ' + c.jobs.join(' and ') + ' on ' + shortD(c.date))));
+      const ul = mk('ul'); clashMonth.slice(0, 10).forEach((c) => {
+        const li = mk('li', '', c.person + ' is on ' + c.jobs.join(' and ') + ' on ' + shortD(c.date) + '. ');
+        c.jobs.forEach((jb) => {
+          const hand = manual.some((m) => baseJob(m.job) === jb && m.date === c.iso && m.person === c.person);
+          const b = mk('button', 'clr clashfix', 'Take ' + c.person + ' off ' + jb + (hand ? ' (added by hand)' : '')); b.type = 'button';
+          b.onclick = () => {
+            manual = manual.filter((m) => !(baseJob(m.job) === jb && m.date === c.iso && m.person === c.person)); saveManual();
+            for (let q = all.length - 1; q >= 0; q--) if (all[q].manual && all[q].base === jb && isoD(all[q].s) === c.iso && crewOf(all[q]).includes(c.person)) all.splice(q, 1);
+            if (!excl.some((x) => x.job === jb && x.person === c.person && x.date === c.iso)) excl.push({ job: jb, person: c.person, date: c.iso }); saveEx();
+            items = all.filter((x) => !x.deleted);
+            logAct('Crew removed', jb, c.person + ' taken off ' + jb + ' on ' + shortD(c.date) + ' from the overlap warning.'); render();
+          };
+          li.appendChild(b); li.appendChild(document.createTextNode(' '));
+        });
+        ul.appendChild(li);
+      });
       al.appendChild(ul); body.appendChild(al);
     }
 
@@ -822,7 +837,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104za. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zb. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
