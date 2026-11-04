@@ -351,6 +351,14 @@ dash.draw('calendar', (el) => {
       });
       m.appendChild(cx);
     }
+    if (dDay) {
+      const pw = prevWorkday(dDay, r.base);
+      if (pw && crewOnDay(r.base, dDay).length < crewOnDay(r.base, pw).length) {
+        const cp = document.createElement('button'); cp.type = 'button'; cp.className = 'cmbtn'; cp.textContent = 'Copy crew from ' + shortD(pw) + ' to this day';
+        cp.onclick = () => { const res = copyCrew(r.base, pw, dDay); items = all.filter((x) => !x.deleted); logAct('Crew added', r.base, 'Crew copied from ' + shortD(pw) + ' to ' + shortD(dDay) + ': ' + (res.done.join(', ') || 'nobody') + '.'); closeMenu(); rerender(); toast((res.done.length ? res.done.join(', ') + ' added to ' + shortD(dDay) + '.' : 'Nobody could be added.') + (res.skipped.length ? ' Skipped: ' + res.skipped.join(', ') + '.' : '')); };
+        m.appendChild(cp);
+      }
+    }
     const del = document.createElement('button'); del.type = 'button'; del.className = 'cmbtn cmdel'; del.textContent = 'Delete from planner';
     del.onclick = () => {
       if (!del.dataset.sure) { del.dataset.sure = '1'; del.textContent = 'Click again to delete'; return; }
@@ -430,6 +438,19 @@ dash.draw('calendar', (el) => {
   const toastUndo = (msg, fn) => { const t = mk('div', 'toast', msg + ' '); t.setAttribute('role', 'status'); const b = mk('button', 'toastbtn', 'Undo'); b.type = 'button'; b.onclick = () => { t.remove(); fn(); }; t.appendChild(b); document.body.appendChild(t); setTimeout(() => t.remove(), 12000); };
   const toast = (msg) => { const t = mk('div', 'toast', msg); t.setAttribute('role', 'status'); document.body.appendChild(t); setTimeout(() => t.remove(), 6000); };
   // Drop a crew face on a job for a day: refused if they are off or already on a job that day.
+  // Copy the crew of the nearest earlier working day (same job) onto another day. People who are off, or already on another job, are skipped.
+  const prevWorkday = (d, base) => { for (let k = 1; k <= 7; k++) { const x = addDays(d, -k); if (isWork(x) && crewOnDay(base, x).length) return x; } return null; };
+  const crewOnDay = (base, x) => [...new Set(items.filter((r) => r.base === base && (r.kind === 'roster' || r.kind === 'fantech') && r.s <= x && x <= r.e && (isoD(r.s) === isoD(r.e) || isWork(x))).flatMap((r) => crewOf(r)))].filter((q) => !isEx(q, base, x));
+  const copyCrew = (base, from, to) => {
+    const done = [], skipped = [];
+    crewOnDay(base, from).forEach((p) => {
+      if (crewOnDay(base, to).includes(p)) return;
+      const o = offOnFn(p, to);
+      const busy = /^Labour hire/.test(p) ? [] : items.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s <= to && to <= r.e && (isoD(r.s) === isoD(r.e) || isWork(to)) && crewOf(r).includes(p) && !isEx(p, r.base, to));
+      if (o) skipped.push(p + ' (' + o.toLowerCase() + ')'); else if (busy.length) skipped.push(p + ' (on ' + busy[0].base + ')'); else { assignFn(p, base, to, true); done.push(p); }
+    });
+    return { done, skipped };
+  };
   const dropPerson = (p, job, d, row) => {
     // Dropped on a job: add the person to every working day that booking covers, plus every other day that week the job is on site.
     // Also every other working day that week when the job is on site (other bookings of the same job).
@@ -871,7 +892,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104ze. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zf. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -902,7 +923,9 @@ dash.draw('calendar', (el) => {
         if (prev) { setEdit(prev, { deleted: false }); } else { added.push(row); saveAdded(); all.push(mkAdded(row)); }
         items = all.filter((x) => !x.deleted);
         logAct('Added', baseJob(name), 'Scheduled from the job list: ' + name + ' on ' + shortD(d) + '.');
-        render(); toast(name + ' put on ' + shortD(d) + '. Right-click the box to change its dates, add crew or set the cost centre.');
+        const pw = prevWorkday(d, baseJob(name)); const res = pw ? copyCrew(baseJob(name), pw, d) : { done: [], skipped: [] };
+        items = all.filter((x) => !x.deleted);
+        render(); toast(name + ' put on ' + shortD(d) + (res.done.length ? ' with ' + res.done.join(', ') + ' from ' + shortD(pw) : '') + (res.skipped.length ? '. Skipped: ' + res.skipped.join(', ') : '') + '. Right-click the box to change its dates, add crew or set the cost centre.');
       }, () => { ui.sel = ui.sel === name ? null : name; render(); }, '[data-day]');
       list.appendChild(b);
     };
