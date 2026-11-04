@@ -436,7 +436,7 @@ dash.draw('calendar', (el) => {
     const done = [], skipped = [];
     days.forEach((x) => {
       const o = offOnFn(p, x);
-      const busy = items.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s <= x && x <= r.e && (isoD(r.s) === isoD(r.e) || isWork(x)) && crewOf(r).includes(p) && !isEx(p, r.base, x));
+      const busy = /^Labour hire/.test(p) ? [] : items.filter((r) => (r.kind === 'roster' || r.kind === 'fantech') && r.s <= x && x <= r.e && (isoD(r.s) === isoD(r.e) || isWork(x)) && crewOf(r).includes(p) && !isEx(p, r.base, x)); // labour hire can be on several jobs in one day
       if (o) skipped.push(shortD(x) + ' (' + o + ')'); else if (busy.length) skipped.push(shortD(x) + ' (on ' + busy[0].base + ')'); else { assignFn(p, job, x, true); done.push(x); }
     });
     if (done.length) { logAct('Crew added', baseJob(job), p + ' added to ' + job + ' for ' + done.length + ' day' + (done.length > 1 ? 's' : '') + ' (' + rng(done[0], done[done.length - 1]) + ')' + (skipped.length ? '; locked, not added: ' + skipped.join(', ') : '') + '.'); renderFn(); }
@@ -820,7 +820,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104x. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104y. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
