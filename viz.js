@@ -494,7 +494,7 @@
 // Hours written in a booking's wording or note, for example "4 h", "2 hrs" or "half day". A booking with hours stated is a part-day job.
 window.partHours = (r) => {
   const t = (r.label || '') + ' ' + (r.note || '');
-  const m = t.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\b(?!\s*overtime)/i);
+  const m = t.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\b(?!\s*(?:of\s*)?overtime)/i);
   if (m) return +m[1];
   if (/half[\s-]?day/i.test(t)) return 3.8;
   return 0;

@@ -374,6 +374,23 @@ dash.draw('calendar', (el) => {
     if (base === IGA) return c.find((x) => x.kind === 'program') || null;
     return c.find((x) => x.kind === 'roster') || c.find((x) => x.kind === 'fantech') || c[0] || null;
   };
+  // Hours booked on the planner. Own crew count 7.6 h a day and labour hire 8 h a day. A part-day job counts the hours in its note.
+  // Overtime written in a note ("1 h overtime") is added on top, once for the booking.
+  const WH = (n) => /^Labour hire/.test(n) ? 8 : 7.6;
+  const otOf = (q) => { const t = (q.label || '') + ' ' + (q.note || ''); const m = t.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\s*(?:of\s*)?overtime/i) || t.match(/overtime[^0-9]{0,12}(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)/i); return m ? +m[1] : 0; };
+  const bookedFor = (rows, from, to) => {
+    let h = 0, ot = 0, pd = 0;
+    rows.forEach((q) => {
+      if (q.deleted || (q.kind !== 'roster' && q.kind !== 'fantech')) return;
+      const who = crewOf(q), ph = partHours(q), single = isoD(q.s) === isoD(q.e); let any = false;
+      for (let d = new Date(Math.max(+q.s, +from)); d <= q.e && d <= to; d = addDays(d, 1)) {
+        if (!(single || isWork(d))) continue; any = true;
+        who.filter((n) => !isEx(n, q.base, d)).forEach((n) => { h += ph || WH(n); pd += ph ? ph / WH(n) : 1; });
+      }
+      if (any && q.s >= from && q.s <= to) { const o = otOf(q); if (o) { ot += o; h += o; } }
+    });
+    return { h: Math.round(h * 10) / 10, ot, pd: Math.round(pd * 100) / 100 };
+  };
   const inMonth = (r, mi) => { const [y, m] = MONTHS[mi]; return r.s <= new Date(y, m + 1, 0) && r.e >= new Date(y, m, 1); };
 
   const fmtT = (iso) => d3.timeFormat('%a %-d %b, %-I:%M %p')(new Date(iso));
@@ -786,7 +803,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104s. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104u. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -980,6 +997,11 @@ dash.draw('calendar', (el) => {
           const hbU = mk('div', 'daybar'); const hfU = document.createElement('i'); hfU.style.width = Math.min(100, pcU) + '%'; hfU.style.background = pcU > 100 ? '#e03131' : '#2b9348'; hbU.appendChild(hfU); det.appendChild(hbU);
         }
       }
+      try {
+        const jr = all.filter((x) => x.base === ui.sel && !x.deleted), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+        const far = new Date(2100, 0, 1), past = bookedFor(jr, new Date(2000, 0, 1), addDays(t0, -1)), ahead = bookedFor(jr, t0, far);
+        if (past.h || ahead.h) det.appendChild(mk('span', '', 'Hours on the planner: ' + past.h + ' h before today and ' + ahead.h + ' h from today, ' + Math.round((past.h + ahead.h) * 10) / 10 + ' h in total' + (past.ot + ahead.ot ? ', including ' + (past.ot + ahead.ot) + ' h overtime' : '') + '. Own crew count 7.6 h a day, labour hire 8 h a day, and a part-day job counts the hours in its note.'));
+      } catch (e9) { console.log('PH ERR', e9.message); }
       const scl = (ok('stage_claims') || []).filter((x) => same(x.job, ui.sel));
       const suD = (ok('stage_used') || []).filter((x) => same(x.job, ui.sel));
       if (scl.length || suD.length) {
@@ -999,9 +1021,10 @@ dash.draw('calendar', (el) => {
           out.textContent = ''; const k = sel.value; window.__drawSel[ui.sel] = k;
           const c = scl.find((x) => kind(x.stage) === k); const us = suD.filter((x) => kind(x.stage) === k); let u = us.length ? { est_h: us.reduce((t, x) => t + (+x.est_h || 0), 0), used_h: us.reduce((t, x) => t + (+x.used_h || 0), 0), left_h: us.reduce((t, x) => t + (+x.left_h || 0), 0), as_of: us[0].as_of } : null;
           if (!u && c && +c.est_h > 0 && c.used_h !== '' && c.used_h !== undefined) u = { est_h: c.est_h, used_h: c.used_h, left_h: Math.max(0, c.est_h - c.used_h), as_of: 'Simpro, from the WIP check' };
-          try { const td = new Date(); td.setHours(0, 0, 0, 0); let pd = 0, dy = 0;
-            all.forEach((q) => { if (q.deleted || !q.cc || !same(q.job, ui.sel)) return; const g = q.cc === 'Cut-out' ? 'Fit-off' : q.cc; if (g !== k) return; const ro = q.kind === 'roster', n = ro ? Math.max(1, crewOf(q).length) : 0; for (let d = new Date(Math.max(+q.s, +td)); d <= q.e; d = addDays(d, 1)) if (isWork(d)) { if (ro) pd += n; else dy++; } });
-            if (pd || dy) out.appendChild(mk('span', '', 'Tagged ' + k + ' on the planner, from today: ' + (pd ? pd + ' person-days booked (' + Math.round(pd * 7.6 * 10) / 10 + ' h)' : '') + (pd && dy ? ' and ' : '') + (dy ? dy + ' scheduled working days on program items' : '') + '.')); } catch (e5) { /* tag total skipped */ }
+          try { const td = new Date(); td.setHours(0, 0, 0, 0); let dy = 0; const tg = [];
+            all.forEach((q) => { if (q.deleted || !q.cc || !same(q.job, ui.sel)) return; const g = q.cc === 'Cut-out' ? 'Fit-off' : q.cc; if (g !== k) return; if (q.kind === 'roster' || q.kind === 'fantech') tg.push(q); else for (let d = new Date(Math.max(+q.s, +td)); d <= q.e; d = addDays(d, 1)) if (isWork(d)) dy++; });
+            const bk = bookedFor(tg, td, new Date(2100, 0, 1));
+            if (bk.h || dy) out.appendChild(mk('span', '', 'Tagged ' + k + ' on the planner, from today: ' + (bk.h ? bk.h + ' h booked (' + bk.pd + ' person-days' + (bk.ot ? ', includes ' + bk.ot + ' h overtime' : '') + ')' : '') + (bk.h && dy ? ' and ' : '') + (dy ? dy + ' scheduled working days on program items' : '') + '.')); } catch (e5) { /* tag total skipped */ }
           if (!c && !u) { out.appendChild(mk('span', '', 'No ' + k.toLowerCase() + ' cost centre on this job in the WIP or in Simpro.')); return; }
           if (u) { const e = +u.est_h || 0, h = +u.used_h || 0, l = +u.left_h || 0, pc = e ? Math.round(h / e * 100) : 0;
             out.appendChild(mk('span', '', 'Simpro hours (' + (u.as_of || '') + '): ' + h + ' of ' + e + ' h used (' + pc + '%), ' + l + ' h left' + (h > e ? ', ' + Math.round((h - e) * 100) / 100 + ' h over' : '') + '.'));
@@ -1052,6 +1075,11 @@ dash.draw('calendar', (el) => {
       });
     });
     grip(jd, 'Job information', jd.querySelector('summary'));
+    { // The whole Job information title bar can be dragged, not only the grip.
+      const sm = jd.querySelector('summary'); sm.draggable = true;
+      sm.addEventListener('dragstart', (ev) => { dragging = jd; try { ev.dataTransfer.setData('text/plain', 'Job information'); ev.dataTransfer.effectAllowed = 'move'; } catch (e7) { /* skipped */ } jd.classList.add('dragsec'); });
+      sm.addEventListener('dragend', () => { dragging = null; jd.classList.remove('dragsec'); [jd, cb].forEach((x) => x.classList.remove('dropsec')); });
+    }
     grip(cb, 'the crew bar', cb);
   }
   render();
