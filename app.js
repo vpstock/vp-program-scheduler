@@ -214,6 +214,11 @@ dash.draw('calendar', (el) => {
   const mkPast = (r, p) => ({ ...r, start: p.start, end: p.end, s: parseD(p.start), e: parseD(p.end), key: r.key + '|past', i: -1, moved: 0, status: '', deleted: false, pastPiece: true, base: r.base });
   all.slice().forEach((r) => { const ed = moves[r.key]; if (ed && ed.past) all.push(mkPast(r, ed.past)); });
   // Crew taken off a booking that was already scheduled: one entry per person per day, from today on. Saved in this browser only.
+  // Trade school and leave days (data/crew_off.csv) block bookings. A day you remove here is no longer blocked. Saved in this browser only.
+  const OFFX_KEY = 'vp-sched-offx-v1';
+  let offx = []; try { offx = JSON.parse(localStorage.getItem(OFFX_KEY) || '[]') || []; } catch (e) { offx = []; }
+  const saveOffx = () => { try { localStorage.setItem(OFFX_KEY, JSON.stringify(offx)); } catch (e) { /* storage blocked */ } };
+  const offActive = () => (ok('crew_off') || []).filter((o) => !offx.some((x) => x.person === o.person && x.date === o.date));
   const EX_KEY = 'vp-sched-crewx-v1';
   let excl = [];
   try { excl = JSON.parse(localStorage.getItem(EX_KEY) || '[]') || []; } catch (e) { excl = []; }
@@ -511,6 +516,7 @@ dash.draw('calendar', (el) => {
       const cbs = CREW.map((n) => { const l = mk('label', 'addck'); const c = document.createElement('input'); c.type = 'checkbox'; c.value = n; l.appendChild(c); l.append(' ' + n); crw.appendChild(l); return c; });
       const lhc = mk('label', 'addck'); const lhi = document.createElement('input'); lhi.type = 'checkbox'; lhc.appendChild(lhi); lhc.append(' Labour hire'); crw.appendChild(lhc);
       af.appendChild(crw);
+      const ovl = mk('label', 'addck'); const ovi = document.createElement('input'); ovi.type = 'checkbox'; ovl.appendChild(ovi); ovl.append(' Book them on trade school or leave days too'); af.appendChild(ovl);
       const nt = document.createElement('input'); nt.type = 'text'; nt.placeholder = 'Note (optional)'; fld('Note', nt);
       const hrs = document.createElement('input'); hrs.type = 'number'; hrs.min = '0'; hrs.step = '0.5'; hrs.placeholder = 'Hours, for a part-day return job'; fld('Hours (optional)', hrs);
       const go = mk('button', 'cmbtn', 'Add to planner'); go.type = 'submit'; af.appendChild(go);
@@ -524,6 +530,10 @@ dash.draw('calendar', (el) => {
         if (all.some((x) => x.key === mkey(row))) { toast('That job, wording and dates are already on the planner.'); return; }
         added.push(row); saveAdded();
         const r2 = mkAdded(row); all.push(r2);
+        // Trade school and leave days are skipped for the crew ticked, unless you ticked the box to book them anyway.
+        const skipped = [];
+        if (!ovi.checked) who.filter((n) => !/^labour hire/i.test(n)).forEach((n) => { for (let d = new Date(r2.s); d <= r2.e; d = addDays(d, 1)) { const off = offActive().find((o) => o.person === n && o.date === isoD(d)); if (off && !isEx(n, r2.base, d)) { excl.push({ job: r2.base, person: n, date: isoD(d) }); skipped.push(n + ' ' + shortD(d) + ' (' + off.reason.toLowerCase() + ')'); } } });
+        if (skipped.length) { saveEx(); setTimeout(() => toast('Skipped: ' + skipped.join(', ') + '. Click a trade school box on the calendar to remove it if they are available.'), 300); }
         if (cc.value) setEdit(r2, { cc: cc.value });
         items = all.filter((x) => !x.deleted);
         logAct('Added', r2.base, 'Added to the planner: ' + job + ' · ' + label + ' (' + rng(r2.s, r2.e) + ').');
@@ -641,8 +651,24 @@ dash.draw('calendar', (el) => {
         if (inM && (HOL.includes(isoD(day)) || inBreak(day)) && day.getDay() % 6 !== 0) cell.appendChild(mk('span', 'hol', offLabel(day)));
         if (inM) {
           // Crew days off (trade school, leave) from data/crew_off.csv
-          if (ui.job === 'all') (ok('crew_off') || []).filter((o) => o.date === isoD(day) && (!ui.person || o.person === ui.person)).forEach((o) => {
+          if (ui.job === 'all') offActive().filter((o) => o.date === isoD(day) && (!ui.person || o.person === ui.person)).forEach((o) => {
             const oc = mk('span', 'chip off'); oc.insertAdjacentHTML('afterbegin', faceSVG(o.person, 16) + ' '); oc.append(o.person + ' · ' + o.reason); oc.title = o.person + ': ' + o.reason + ' (not available for jobs)';
+            oc.style.cursor = 'pointer'; oc.title += '. Click to remove it.';
+            oc.onclick = (e7) => {
+              e7.stopPropagation(); closeMenu();
+              const m = document.createElement('div'); m.className = 'ctxmenu'; m.setAttribute('role', 'dialog');
+              const h = document.createElement('strong'); h.textContent = o.person + ': ' + o.reason + ' on ' + shortD(parseD(o.date)); m.appendChild(h);
+              const sm = document.createElement('small'); sm.textContent = 'Bookings skip this day. Remove it if ' + o.person + ' is available.'; m.appendChild(sm);
+              const rm = (list, what) => { list.forEach((x) => offx.push({ person: x.person, date: x.date })); saveOffx(); closeMenu();
+                // Bookings that skipped these days because of the block come back for that person.
+                const freed = excl.filter((q) => list.some((x) => x.person === q.person && x.date === q.date)); excl = excl.filter((q) => !freed.includes(q)); saveEx(); items = all.filter((x) => !x.deleted); logAct('Trade school removed', '', o.person + ': ' + what + ' removed (' + list.length + (list.length === 1 ? ' day' : ' days') + ').'); render();
+                toastUndo(o.person + ': ' + what + ' removed.', () => { offx = offx.filter((x) => !list.some((y) => y.person === x.person && y.date === x.date)); saveOffx(); freed.forEach((q) => excl.push(q)); saveEx(); render(); }); };
+              const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'cmbtn'; b1.textContent = 'Remove this day'; b1.onclick = () => rm([o], o.reason + ' on ' + shortD(parseD(o.date))); m.appendChild(b1);
+              const all2 = offActive().filter((x) => x.person === o.person && x.reason === o.reason);
+              if (all2.length > 1) { const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'cmbtn'; b2.textContent = 'Remove all ' + o.person + ' ' + o.reason.toLowerCase() + ' days (' + all2.length + ')'; b2.onclick = () => rm(all2, 'all ' + o.reason.toLowerCase() + ' days'); m.appendChild(b2); }
+              document.body.appendChild(m); ctxMenu = m;
+              const r0 = oc.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(r0.left, window.innerWidth - m.offsetWidth - 8)) + 'px'; m.style.top = Math.max(8, Math.min(r0.bottom + 4, window.innerHeight - m.offsetHeight - 8)) + 'px';
+            };
             cell.appendChild(oc);
           });
           items.filter(vis).forEach((r) => {
@@ -743,8 +769,7 @@ dash.draw('calendar', (el) => {
     wrap.appendChild(cal); body.appendChild(wrap);
 
     // Weekly crew view: who is on which job each day. Crew already on a job (or off) are greyed and locked.
-    const offRows = ok('crew_off') || [];
-    const offOn = (p, d) => { const o = offRows.find((x) => x.person === p && x.date === isoD(d)); return o ? o.reason : offLabel(d); };
+    const offOn = (p, d) => { const o = offActive().find((x) => x.person === p && x.date === isoD(d)); return o ? o.reason : offLabel(d); };
     const PEOPLE_ROWS = ['Urv', 'Kei', 'Dan', 'Tandy', 'Matt B', 'Dan B', 'Jonte'];
     const mondayOf = (d) => addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay() + 6) % 7));
     if (!ui.wk) { const t0 = new Date(); ui.wk = (t0 >= mStart && t0 <= mEnd) ? mondayOf(t0) : mondayOf(mStart); }
@@ -846,7 +871,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zc. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104ze. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
