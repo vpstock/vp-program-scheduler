@@ -315,8 +315,8 @@ dash.draw('calendar', (el) => {
   }
   const vis = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job) && (!ui.person || crewOf(r).includes(ui.person) || (!r.manual && manual.some((m) => m.person === ui.person && baseJob(m.job) === r.base)) || (r.base === IGA && r.kind === 'program' && items.some((x) => x.base === IGA && x.kind === 'roster' && crewOf(x).includes(ui.person))));
   const IGA = 'Swan St IGA';
-  // Swan St IGA works Saturdays, so its program dates cover Saturdays between the start and finish (Sundays and holidays stay off).
-  const igaSat = (r, day) => r.base === IGA && r.kind === 'program' && day.getDay() === 6;
+  // Swan St IGA does not show on Saturdays (Joy, 4 Nov): the program dates are weekdays only.
+  const igaSat = () => false;
   const visK = (r) => (ui.kinds.has(r.kind) || (ui.kinds.has('fantech') && /^FS\d+/i.test(r.job))) && (ui.job === 'all' || r.base === ui.job);
   // Crew added by dragging show as faces on the job's own box for that day, not as a separate box.
   const hostFor = (base, day) => {
@@ -497,9 +497,9 @@ dash.draw('calendar', (el) => {
             cell.appendChild(oc);
           });
           items.filter(vis).forEach((r) => {
-            // Swan St IGA works Saturdays, so a Saturday between its first and last program date shows even when no single item covers it.
+            // Swan St IGA is weekdays only on the planner (Joy, 4 Nov), so there are no IGA Saturday boxes.
             let gapSat = false;
-            if (r.base === IGA && r.kind === 'program' && day.getDay() === 6) {
+            if (false) {
               const ps = items.filter((x) => x.base === IGA && x.kind === 'program' && visK(x));
               if (ps.length && !ps.some((x) => x.s <= day && day <= x.e) && day > Math.min(...ps.map((x) => +x.s)) && day < Math.max(...ps.map((x) => +x.e)) && r === ps.slice().sort((p, q) => p.s - q.s)[0]) gapSat = true;
             }
@@ -670,7 +670,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104d. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104e. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
