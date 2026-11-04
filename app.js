@@ -803,7 +803,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104v. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104w. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -824,7 +824,18 @@ dash.draw('calendar', (el) => {
       const b = mk('button', 'jbtn'); b.type = 'button'; b.style.setProperty('--jc', jobColor(name));
       b.setAttribute('aria-pressed', String(ui.sel === name));
       b.append(mk('span', '', name), mk('small', 'muted', label));
-      b.onclick = () => { ui.sel = ui.sel === name ? null : name; render(); };
+      b.title = 'Click to see the job. Drag it onto a day on the calendar to schedule it there.'; b.style.cursor = 'grab';
+      pdrag(b, name, (z) => {
+        const d = parseD(z.dataset.day), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+        if (d < t0) { toast('Days that have passed cannot be changed.'); return; }
+        const row = { job: name, label: 'Work scheduled from the job list', start: isoD(d), end: isoD(d), kind: 'program', note: 'Dragged from the job list onto ' + shortD(d) + '. Added on the planner.' };
+        if (all.some((x) => x.key === mkey(row) && !x.deleted)) { toast(name + ' is already on ' + shortD(d) + '.'); return; }
+        const prev = all.find((x) => x.key === mkey(row));
+        if (prev) { setEdit(prev, { deleted: false }); } else { added.push(row); saveAdded(); all.push(mkAdded(row)); }
+        items = all.filter((x) => !x.deleted);
+        logAct('Added', baseJob(name), 'Scheduled from the job list: ' + name + ' on ' + shortD(d) + '.');
+        render(); toast(name + ' put on ' + shortD(d) + '. Right-click the box to change its dates, add crew or set the cost centre.');
+      }, () => { ui.sel = ui.sel === name ? null : name; render(); }, '[data-day]');
       list.appendChild(b);
     };
     names.forEach((n) => {
