@@ -114,7 +114,7 @@
     if (/\bMatt B\b/.test(t)) out.push('Matt B');
     if (/\bJonte\b/i.test(t)) out.push('Jonte');
     if (/\bDan B\b|\bDaniel B/.test(t)) out.push('Dan B');
-    if (/labour hire|labourly/i.test(t)) { const lm = t.match(/labour hire\s*([12])\b/i); if (lm && /^Crew added/.test(r.label || '')) out.push('Labour hire ' + lm[1]); else out.push('Labour hire 1', 'Labour hire 2'); }
+    if (/labour hire|labourly/i.test(t)) { const lm = t.match(/labour hire\s*([12])\b/i); if (lm && /^Crew added/.test(r.label || '')) out.push('Labour hire ' + lm[1]); else { const nm = t.match(/\b(\d+|one|two|three|four)\s+(?:x\s*)?labour(?:ers| hire)/i); const W = { one: 1, two: 2, three: 3, four: 4 }; const n = nm ? (+nm[1] || W[nm[1].toLowerCase()] || 1) : 1; for (let i = 1; i <= Math.min(n, 2); i++) out.push('Labour hire ' + i); } }
     return out;
   };
 
