@@ -713,7 +713,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104g. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104h. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -885,7 +885,6 @@ dash.draw('calendar', (el) => {
             det.appendChild(mk('span', 'muted', 'Hours by stage in Simpro (' + (stU[0].as_of || '') + ').'+(stU.some((x)=>+x.used_h>+x.est_h)?' A stage has run over its estimate.':'')+' The stage track is not drawn because Simpro holds this job as one installation block.'));
             stU.forEach((x) => { const e = +x.est_h || 0, u = +x.used_h || 0, pc = e ? Math.round(u / e * 100) : 0; det.appendChild(mk('span', '', x.stage + ': ' + u + ' of ' + e + ' h (' + pc + '%), ' + (+x.left_h || 0) + ' h left' + (u > e ? ', ' + Math.round((u - e) * 100) / 100 + ' h over' : ''))); const sb = mk('div', 'daybar'); const sf = document.createElement('i'); sf.style.width = Math.min(100, pc) + '%'; sf.style.background = pc > 100 ? '#e03131' : '#2b9348'; sb.appendChild(sf); det.appendChild(sb); });
           } else det.appendChild(mk('span', 'muted', 'The stage track is not shown because the Simpro hours for this job are not split by rough-in, fit-off or commissioning. Progress is the items above and the hours bar.')); }
-        if (!noSplit && stU.length) { det.appendChild(mk('span', 'muted', 'Hours left in Simpro (' + (stU[0].as_of || '') + '):')); stU.forEach((x) => { const e = +x.est_h || 0, u = +x.used_h || 0, l = +x.left_h || 0; det.appendChild(mk('span', '', x.stage + ': ' + u + ' of ' + e + ' h used, ' + l + ' h left' + (u > e ? ' (' + Math.round((u - e) * 100) / 100 + ' h over)' : ''))); }); }
         if (!noSplit) buildTrack(th, { plan: hrPlan, confirmed, complete: jobMs.some((x) => /^stage:\s*job complete/i.test(x.milestone) && /done/i.test(x.status)), pos: posUse, walkers: crew, color: jobColor(ui.sel), hours: hrs, reduce, aria: ui.sel + ' schedule position' });
         }
         if (!noSplit) det.appendChild(mk('span', 'muted', (/459 Little Collins/i.test(ui.sel) ? 'Ticks show what has been recorded as done on each level. Matt B stands at the first unfinished job.' : 'The marker shows where the roster and builder dates put this job today. A stage is only ticked once the crew say it is complete. Red stripes show scheduled time running past the end of a stage.') + (/459 Little Collins/i.test(ui.sel) ? '' : /^FS\d+/i.test(ui.sel) || /fire station/i.test(ui.sel) ? ' Fire stations are tracked by truck and by day: each truck gets connected to the extraction hose in turn. There is no rough-in, fit-off or commissioning.' : '')));
@@ -909,16 +908,36 @@ dash.draw('calendar', (el) => {
         }
       }
       const scl = (ok('stage_claims') || []).filter((x) => same(x.job, ui.sel));
-      if (scl.length) {
+      const suD = (ok('stage_used') || []).filter((x) => same(x.job, ui.sel));
+      if (scl.length || suD.length) {
         const dol = (v) => '$' + (+v || 0).toLocaleString('en-AU', { maximumFractionDigits: 0 });
-        det.appendChild(mk('span', 'muted', 'November claim and hours cap, from the WIP (NOV 26 sheet). One person-day is 7.6 h.'));
-        scl.forEach((x) => {
-          const cg = +x.pct_this_month || 0, has = x.est_h !== '' && x.est_h !== undefined;
-          let t = x.stage + ': claiming ' + cg + '% = ' + dol(x.invoice) + ' this month. ';
-          if (has) t += 'Hours cap ' + (+x.cap_h) + ' h (' + (+x.cap_days) + ' person-days) of ' + x.est_h + ' h estimated.' + (+x.used_h > +x.est_h ? ' Already ' + (+x.used_h) + ' h used in Simpro.' : '');
-          else t += 'Hours cap not worked out yet, the Simpro hours are not loaded for this quote.';
-          det.appendChild(mk('span', '', t));
-        });
+        const kind = (n) => /rough/i.test(n) ? 'Rough-in' : /fit/i.test(n) ? 'Fit-off' : /demo|cut/i.test(n) ? 'Cut-out' : /comm/i.test(n) ? 'Commissioning' : String(n);
+        const opts = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
+        suD.concat(scl).forEach((x) => { const k = kind(x.stage); if (!opts.includes(k)) opts.push(k); });
+        const hasD = (k) => suD.some((x) => kind(x.stage) === k) || scl.some((x) => kind(x.stage) === k && (+x.invoice || +x.pct_claimed || +x.pct_this_month));
+        window.__drawSel = window.__drawSel || {};
+        const dd = mk('div', 'drawdown');
+        const lab = mk('label', 'muted', 'Cost centre drawdown '); const sel = document.createElement('select');
+        opts.forEach((o) => { const op = document.createElement('option'); op.value = o; op.textContent = o; sel.appendChild(op); });
+        sel.value = window.__drawSel[ui.sel] && opts.includes(window.__drawSel[ui.sel]) ? window.__drawSel[ui.sel] : (opts.find(hasD) || opts[0]);
+        lab.appendChild(sel); dd.appendChild(lab);
+        const out = mk('div', 'drawout'); dd.appendChild(out);
+        const paint = () => {
+          out.textContent = ''; const k = sel.value; window.__drawSel[ui.sel] = k;
+          const c = scl.find((x) => kind(x.stage) === k); let u = suD.find((x) => kind(x.stage) === k);
+          if (!u && c && +c.est_h > 0 && c.used_h !== '' && c.used_h !== undefined) u = { est_h: c.est_h, used_h: c.used_h, left_h: Math.max(0, c.est_h - c.used_h), as_of: 'Simpro, from the WIP check' };
+          if (!c && !u) { out.appendChild(mk('span', '', 'No ' + k.toLowerCase() + ' cost centre on this job in the WIP or in Simpro.')); return; }
+          if (u) { const e = +u.est_h || 0, h = +u.used_h || 0, l = +u.left_h || 0, pc = e ? Math.round(h / e * 100) : 0;
+            out.appendChild(mk('span', '', 'Simpro hours (' + (u.as_of || '') + '): ' + h + ' of ' + e + ' h used (' + pc + '%), ' + l + ' h left' + (h > e ? ', ' + Math.round((h - e) * 100) / 100 + ' h over' : '') + '.'));
+            const sb = mk('div', 'daybar'); const sf = document.createElement('i'); sf.style.width = Math.min(100, pc) + '%'; sf.style.background = pc > 100 ? '#e03131' : '#2b9348'; sb.appendChild(sf); out.appendChild(sb); }
+          else out.appendChild(mk('span', 'muted', 'Simpro hours are not loaded for this stage.'));
+          if (c) { const cg = +c.pct_this_month || 0, has = c.est_h !== '' && c.est_h !== undefined && +c.est_h > 0;
+            out.appendChild(mk('span', '', 'November claim (WIP): ' + dol(c.revenue) + ' stage value, ' + (+c.pct_claimed || 0) + '% already claimed, claiming ' + cg + '% = ' + dol(c.invoice) + ' this month.'));
+            out.appendChild(mk('span', '', has ? 'Hours cap this month: ' + (+c.cap_h) + ' h (' + (+c.cap_days) + ' person-days at 7.6 h) of ' + c.est_h + ' h estimated.' : 'Hours cap not worked out yet, the Simpro hours are not loaded for this quote.'));
+          } else out.appendChild(mk('span', 'muted', 'This stage has no line on the November WIP, so no claim or hours cap.'));
+        };
+        sel.addEventListener('change', paint); paint();
+        det.appendChild(dd);
       }
       const w = wipFor(ui.sel);
       if (w) {
