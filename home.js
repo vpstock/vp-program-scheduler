@@ -7,11 +7,7 @@
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h !== undefined) e.innerHTML = h; return e; };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  // Hero: crew walking along a duct, fan spinning at the end
-  const walk = document.getElementById('heroWalk');
-  if (walk) {
-    walk.innerHTML = CREW.map((n, i) => '<span class="hw" style="--d:' + (-i * 4.4) + 's">' + figSVG(n, 84) + '</span>').join('');
-  }
+  // Banner: the walking crew has been taken off. The ladder scene and the fan stay.
 
   // Two on ladders lifting a duct section up to the hangers
   const f1 = document.getElementById('sceneF1'), f2 = document.getElementById('sceneF2');
