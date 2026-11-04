@@ -29,6 +29,7 @@ const dash = {
   },
   async start(ids) {
     this._ids = ids;
+    try { await window.vpSyncReady; } catch (e) { /* no shared edits */ }
     try { await this.load(); this.paint(); } catch (e) { document.getElementById('dash-root').insertAdjacentHTML('afterbegin', '<p style="color:var(--color-bad)">Could not load the data files: ' + e.message + '</p>'); }
     setInterval(async () => { try { await this.load(); this.paint(); } catch (e) {} }, 5 * 60 * 1000);
   }
@@ -894,7 +895,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zg. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104zh. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it

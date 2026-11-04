@@ -17,7 +17,7 @@
   const tEl = document.getElementById('todayDate');
   if (tEl) tEl.textContent = d3.timeFormat('%A %-d %B %Y')(today);
 
-  d3.csv('data/cal_events.csv?t=' + Date.now(), { cache: 'no-store' }).then((rows) => {
+  Promise.resolve(window.vpSyncReady).catch(() => {}).then(() => d3.csv('data/cal_events.csv?t=' + Date.now(), { cache: 'no-store' })).then((rows) => {
     let moves = {};
     try { moves = JSON.parse(localStorage.getItem('vp-sched-edits-v1') || '{}') || {}; } catch (e) { moves = {}; }
     const ev = rows.filter((r) => !(moves[[r.job, r.label, r.start, r.end].join('|')] || {}).deleted).map((r) => { const ed = moves[[r.job, r.label, r.start, r.end].join('|')] || {}; return { ...r, s: parse(ed.start || r.start), e: parse(ed.end || r.end), status: ed.status || '', base: base(r.job) }; });
