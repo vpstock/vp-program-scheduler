@@ -713,7 +713,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104f. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104g. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -908,6 +908,18 @@ dash.draw('calendar', (el) => {
           const hbU = mk('div', 'daybar'); const hfU = document.createElement('i'); hfU.style.width = Math.min(100, pcU) + '%'; hfU.style.background = pcU > 100 ? '#e03131' : '#2b9348'; hbU.appendChild(hfU); det.appendChild(hbU);
         }
       }
+      const scl = (ok('stage_claims') || []).filter((x) => same(x.job, ui.sel));
+      if (scl.length) {
+        const dol = (v) => '$' + (+v || 0).toLocaleString('en-AU', { maximumFractionDigits: 0 });
+        det.appendChild(mk('span', 'muted', 'November claim and hours cap, from the WIP (NOV 26 sheet). One person-day is 7.6 h.'));
+        scl.forEach((x) => {
+          const cg = +x.pct_this_month || 0, has = x.est_h !== '' && x.est_h !== undefined;
+          let t = x.stage + ': claiming ' + cg + '% = ' + dol(x.invoice) + ' this month. ';
+          if (has) t += 'Hours cap ' + (+x.cap_h) + ' h (' + (+x.cap_days) + ' person-days) of ' + x.est_h + ' h estimated.' + (+x.used_h > +x.est_h ? ' Already ' + (+x.used_h) + ' h used in Simpro.' : '');
+          else t += 'Hours cap not worked out yet, the Simpro hours are not loaded for this quote.';
+          det.appendChild(mk('span', '', t));
+        });
+      }
       const w = wipFor(ui.sel);
       if (w) {
         det.appendChild(mk('span', 'muted', 'On the WIP'));
@@ -927,4 +939,4 @@ dash.draw('calendar', (el) => {
   render();
 });
 
-dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones','finished','job_hours','crew_off','stage_used']);
+dash.start(['stage_hours','programs','guideline','crew','fantech','cal_events','wip_nov','milestones','finished','job_hours','crew_off','stage_used','stage_claims']);
