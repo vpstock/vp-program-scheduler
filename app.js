@@ -310,8 +310,8 @@ dash.draw('calendar', (el) => {
     ccw.appendChild(ccs); m.appendChild(ccw);
     // Take one person off this booking (today and later days only; days that have passed stay as they were)
     let crewHere = (r.kind === 'roster' || r.kind === 'fantech') ? crewOf(r) : [];
-    // Swan St IGA shows one combined box per day, so its crew comes from the roster rows for that day.
-    if (!crewHere.length && r.base === IGA && dDay) crewHere = [...new Set(all.filter((x) => !x.deleted && x.base === IGA && x.kind === 'roster' && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, IGA, dDay));
+    // Program and other boxes carry no crew of their own, so the crew comes from the roster rows for that job and day (Swan St IGA is one combined box).
+    if (!crewHere.length && dDay) crewHere = [...new Set(all.filter((x) => !x.deleted && x.base === r.base && (x.kind === 'roster' || x.kind === 'fantech') && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x)))].filter((q) => !isEx(q, r.base, dDay));
     if (crewHere.length) {
       const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
       const cx = document.createElement('div'); cx.className = 'cmcrew';
@@ -728,7 +728,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104n. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104o. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
