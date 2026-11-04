@@ -368,3 +368,5 @@ body.pdragging{cursor:grabbing;user-select:none}
 .drawdown{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:8px;border:1px solid #dfe4ec;border-radius:8px;background:#f7f8fa}
 .drawdown select{margin-left:6px;padding:4px 8px;border:1px solid #dfe4ec;border-radius:8px;font:inherit}
 .drawout{display:flex;flex-direction:column;gap:4px}
+.cmcc{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#333b47}.cmcc select{flex:1;padding:6px 8px;border:1px solid #dfe4ec;border-radius:8px;font:inherit}
+.cctag{display:block;font-size:9px;font-weight:600;color:#0a1a4d;background:#eef3ff;border-radius:4px;padding:0 4px;margin-top:2px;width:max-content}

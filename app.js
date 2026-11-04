@@ -193,7 +193,7 @@ dash.draw('calendar', (el) => {
     const k = mkey(r), ed = moves[k] || {};
     const s = parseD(ed.start || r.start), e = parseD(ed.end || r.end);
     const moved = Math.round((s - parseD(r.start)) / 86400000) || Math.round((e - parseD(r.end)) / 86400000);
-    return { ...r, i, key: k, moved, status: ed.status || '', deleted: !!ed.deleted, s, e, base: baseJob(r.job) };
+    return { ...r, i, key: k, moved, status: ed.status || '', cc: ed.cc || '', deleted: !!ed.deleted, s, e, base: baseJob(r.job) };
   });
   // Crew moved onto a job in the weekly view: stored as one-day roster rows, in this browser only.
   const CREW_KEY = 'vp-sched-crew-v1';
@@ -224,7 +224,7 @@ dash.draw('calendar', (el) => {
   let cascading = '';
   const rng = (s, e) => (isoD(s) === isoD(e) ? shortD(s) : shortD(s) + ' to ' + shortD(e));
   const setEdit = (r, patch) => {
-    const oS = r.s, oE = r.e, oSt = r.status || '', oDel = !!r.deleted;
+    const oS = r.s, oE = r.e, oCc = r.cc || '', oSt = r.status || '', oDel = !!r.deleted;
     let splitPast = null;
     if ((patch.start || patch.end) && !patch.deleted && !patch.status) {
       const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
@@ -243,11 +243,12 @@ dash.draw('calendar', (el) => {
     const same0 = (!ed.start || ed.start === r.start) && (!ed.end || ed.end === r.end);
     if (same0) { delete ed.start; delete ed.end; }
     if (!ed.status) delete ed.status;
+    if (!ed.cc) delete ed.cc;
     if (!ed.deleted) delete ed.deleted;
     if (Object.keys(ed).length) moves[r.key] = ed; else delete moves[r.key];
     saveMoves();
     const e2 = moves[r.key] || {};
-    r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || '';
+    r.s = parseD(e2.start || r.start); r.e = parseD(e2.end || r.end); r.status = e2.status || ''; r.cc = e2.cc || '';
     r.moved = Math.round((r.s - parseD(r.start)) / 86400000) || Math.round((r.e - parseD(r.end)) / 86400000);
     r.deleted = !!e2.deleted;
     if (splitPast && !all.some((x) => x.key === r.key + '|past')) all.push(mkPast(Object.assign({}, r, { start: r.start, end: r.end }), splitPast));
@@ -256,6 +257,7 @@ dash.draw('calendar', (el) => {
     if (r.deleted && !oDel) logAct('Deleted', r.base, 'Deleted from the planner: ' + who + ' (' + rng(oS, oE) + ').');
     else if (!r.deleted && oDel) logAct('Restored', r.base, 'Put back on the planner: ' + who + '.');
     if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.') + (splitPast ? ' Days before today (' + rng(parseD(splitPast.start), parseD(splitPast.end)) + ') were left as they were.' : ''));
+    if ((r.cc || '') !== oCc) logAct('Cost centre', r.base, who + ': ' + (r.cc ? 'set to ' + r.cc + (r.cc === 'Cut-out' ? ' (counts under fit-off)' : '') : 'cost centre cleared') + '.');
     if ((r.status || '') !== oSt) logAct('Status', r.base, who + ': ' + (r.status ? STATUS[r.status] : 'status cleared') + '.');
   };
   // Move the later items of the same job by the same number of days (the job's dates follow the one you changed).
@@ -300,6 +302,12 @@ dash.draw('calendar', (el) => {
       st.appendChild(b);
     });
     m.appendChild(st);
+    const ccw = document.createElement('label'); ccw.className = 'cmcc'; ccw.appendChild(document.createTextNode('Cost centre '));
+    const ccs = document.createElement('select');
+    [['', 'Not set'], ['Rough-in', 'Rough-in'], ['Cut-out', 'Cut-out (counts under fit-off)'], ['Fit-off', 'Fit-off'], ['Commissioning', 'Commissioning']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ccs.appendChild(o); });
+    ccs.value = r.cc || '';
+    ccs.onchange = () => { setEdit(r, { cc: ccs.value }); closeMenu(); rerender(); };
+    ccw.appendChild(ccs); m.appendChild(ccw);
     // Take one person off this booking (today and later days only; days that have passed stay as they were)
     const crewHere = (r.kind === 'roster' || r.kind === 'fantech') ? crewOf(r) : [];
     if (crewHere.length) {
@@ -482,7 +490,7 @@ dash.draw('calendar', (el) => {
     tip.append(mk('span', 'muted', (nEdit ? nEdit + ' item' + (nEdit === 1 ? '' : 's') + ' changed from the schedule' + (nDel ? ' (' + nDel + ' deleted)' : '') + '. ' : '') + 'Drag an item to move it (hold Shift to move the later items on that job too), or right click it to change the date or mark it Confirmed or To be discussed. Saved in this browser only; it does not change the Schedule Calendar.'));
     if (nEdit) {
       const rs = mk('button', 'clr', 'Put everything back'); rs.type = 'button';
-      rs.onclick = () => { logAct('Reset', '', 'Put everything back to the original schedule (date, status and delete changes cleared).'); excl = []; saveEx(); moves = {}; saveMoves(); for (let q = all.length - 1; q >= 0; q--) if (all[q].pastPiece) all.splice(q, 1); all.forEach((r) => { r.moved = 0; r.status = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
+      rs.onclick = () => { logAct('Reset', '', 'Put everything back to the original schedule (date, status and delete changes cleared).'); excl = []; saveEx(); moves = {}; saveMoves(); for (let q = all.length - 1; q >= 0; q--) if (all[q].pastPiece) all.splice(q, 1); all.forEach((r) => { r.moved = 0; r.status = ''; r.cc = ''; r.deleted = false; r.s = parseD(r.start); r.e = parseD(r.end); }); items = all.slice(); render(); };
       tip.appendChild(rs);
     }
     body.appendChild(tip);
@@ -581,6 +589,7 @@ dash.draw('calendar', (el) => {
               }, chipClick, '[data-day]');
               if (r.moved) { c.classList.add('moved'); c.title += ' (moved ' + (r.moved > 0 ? '+' : '') + r.moved + ' d from the schedule)'; }
               if (r.status) { c.classList.add('s-' + r.status); c.title += ' (' + STATUS[r.status] + ')'; c.insertAdjacentHTML('beforeend', r.status === 'confirmed' ? '<svg class="stbadge" viewBox="0 0 12 12" width="12" height="12" aria-label="Confirmed"><circle cx="6" cy="6" r="6" fill="#2b9348"/><path d="M3 6.2L5.2 8.3L9 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<b class="stbadge disc" title="To be discussed">To discuss</b>'); }
+              if (r.cc) { c.title += ' (' + r.cc + ')'; c.insertAdjacentHTML('beforeend', '<b class="cctag">' + r.cc + '</b>'); }
               c.oncontextmenu = (e4) => { e4.preventDefault(); openMenu(r, e4.clientX, e4.clientY, render, dHere); };
             }
             c._row = r; c.dataset.drop = '1'; c.dataset.base = r.base; c.dataset.date = isoD(dHere);
@@ -713,7 +722,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104h. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104i. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -911,21 +920,24 @@ dash.draw('calendar', (el) => {
       const suD = (ok('stage_used') || []).filter((x) => same(x.job, ui.sel));
       if (scl.length || suD.length) {
         const dol = (v) => '$' + (+v || 0).toLocaleString('en-AU', { maximumFractionDigits: 0 });
-        const kind = (n) => /rough/i.test(n) ? 'Rough-in' : /fit/i.test(n) ? 'Fit-off' : /demo|cut/i.test(n) ? 'Cut-out' : /comm/i.test(n) ? 'Commissioning' : String(n);
-        const opts = ['Rough-in', 'Fit-off', 'Cut-out', 'Commissioning'];
+        const kind = (n) => /rough/i.test(n) ? 'Rough-in' : /fit/i.test(n) ? 'Fit-off' : /demo|cut/i.test(n) ? 'Fit-off' : /comm/i.test(n) ? 'Commissioning' : String(n);
+        const opts = ['Rough-in', 'Fit-off', 'Commissioning'];
         suD.concat(scl).forEach((x) => { const k = kind(x.stage); if (!opts.includes(k)) opts.push(k); });
         const hasD = (k) => suD.some((x) => kind(x.stage) === k) || scl.some((x) => kind(x.stage) === k && (+x.invoice || +x.pct_claimed || +x.pct_this_month));
         window.__drawSel = window.__drawSel || {};
         const dd = mk('div', 'drawdown');
         const lab = mk('label', 'muted', 'Cost centre drawdown '); const sel = document.createElement('select');
-        opts.forEach((o) => { const op = document.createElement('option'); op.value = o; op.textContent = o; sel.appendChild(op); });
+        opts.forEach((o) => { const op = document.createElement('option'); op.value = o; op.textContent = o === 'Fit-off' ? 'Fit-off (includes cut-out)' : o; sel.appendChild(op); });
         sel.value = window.__drawSel[ui.sel] && opts.includes(window.__drawSel[ui.sel]) ? window.__drawSel[ui.sel] : (opts.find(hasD) || opts[0]);
         lab.appendChild(sel); dd.appendChild(lab);
         const out = mk('div', 'drawout'); dd.appendChild(out);
         const paint = () => {
           out.textContent = ''; const k = sel.value; window.__drawSel[ui.sel] = k;
-          const c = scl.find((x) => kind(x.stage) === k); let u = suD.find((x) => kind(x.stage) === k);
+          const c = scl.find((x) => kind(x.stage) === k); const us = suD.filter((x) => kind(x.stage) === k); let u = us.length ? { est_h: us.reduce((t, x) => t + (+x.est_h || 0), 0), used_h: us.reduce((t, x) => t + (+x.used_h || 0), 0), left_h: us.reduce((t, x) => t + (+x.left_h || 0), 0), as_of: us[0].as_of } : null;
           if (!u && c && +c.est_h > 0 && c.used_h !== '' && c.used_h !== undefined) u = { est_h: c.est_h, used_h: c.used_h, left_h: Math.max(0, c.est_h - c.used_h), as_of: 'Simpro, from the WIP check' };
+          try { const td = new Date(); td.setHours(0, 0, 0, 0); let pd = 0, dy = 0;
+            all.forEach((q) => { if (q.deleted || !q.cc || !same(q.job, ui.sel)) return; const g = q.cc === 'Cut-out' ? 'Fit-off' : q.cc; if (g !== k) return; const ro = q.kind === 'roster', n = ro ? Math.max(1, crewOf(q).length) : 0; for (let d = new Date(Math.max(+q.s, +td)); d <= q.e; d = addDays(d, 1)) if (isWork(d)) { if (ro) pd += n; else dy++; } });
+            if (pd || dy) out.appendChild(mk('span', '', 'Tagged ' + k + ' on the planner, from today: ' + (pd ? pd + ' person-days booked (' + Math.round(pd * 7.6 * 10) / 10 + ' h)' : '') + (pd && dy ? ' and ' : '') + (dy ? dy + ' scheduled working days on program items' : '') + '.')); } catch (e5) { /* tag total skipped */ }
           if (!c && !u) { out.appendChild(mk('span', '', 'No ' + k.toLowerCase() + ' cost centre on this job in the WIP or in Simpro.')); return; }
           if (u) { const e = +u.est_h || 0, h = +u.used_h || 0, l = +u.left_h || 0, pc = e ? Math.round(h / e * 100) : 0;
             out.appendChild(mk('span', '', 'Simpro hours (' + (u.as_of || '') + '): ' + h + ' of ' + e + ' h used (' + pc + '%), ' + l + ' h left' + (h > e ? ', ' + Math.round((h - e) * 100) / 100 + ' h over' : '') + '.'));
