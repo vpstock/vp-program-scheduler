@@ -304,7 +304,7 @@ dash.draw('calendar', (el) => {
     m.appendChild(st);
     const ccw = document.createElement('label'); ccw.className = 'cmcc'; ccw.appendChild(document.createTextNode('Cost centre '));
     const ccs = document.createElement('select');
-    [['', 'Not set'], ['Rough-in', 'Rough-in'], ['Cut-out', 'Cut-out (counts under fit-off)'], ['Fit-off', 'Fit-off'], ['Commissioning', 'Commissioning']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ccs.appendChild(o); });
+    [['', 'Not set'], ['Demo works', 'Demo works'], ['Rough-in', 'Rough-in'], ['Cut-out', 'Cut-out (counts under fit-off)'], ['Fit-off', 'Fit-off'], ['Commissioning', 'Commissioning']].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ccs.appendChild(o); });
     ccs.value = r.cc || '';
     ccs.onchange = () => { setEdit(r, { cc: ccs.value }); closeMenu(); rerender(); };
     ccw.appendChild(ccs); m.appendChild(ccw);
@@ -722,7 +722,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104i. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104j. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -920,8 +920,8 @@ dash.draw('calendar', (el) => {
       const suD = (ok('stage_used') || []).filter((x) => same(x.job, ui.sel));
       if (scl.length || suD.length) {
         const dol = (v) => '$' + (+v || 0).toLocaleString('en-AU', { maximumFractionDigits: 0 });
-        const kind = (n) => /rough/i.test(n) ? 'Rough-in' : /fit/i.test(n) ? 'Fit-off' : /demo|cut/i.test(n) ? 'Fit-off' : /comm/i.test(n) ? 'Commissioning' : String(n);
-        const opts = ['Rough-in', 'Fit-off', 'Commissioning'];
+        const kind = (n) => /rough/i.test(n) ? 'Rough-in' : /fit/i.test(n) ? 'Fit-off' : /demo/i.test(n) ? 'Demo works' : /cut/i.test(n) ? 'Fit-off' : /comm/i.test(n) ? 'Commissioning' : String(n);
+        const opts = ['Demo works', 'Rough-in', 'Fit-off', 'Commissioning'];
         suD.concat(scl).forEach((x) => { const k = kind(x.stage); if (!opts.includes(k)) opts.push(k); });
         const hasD = (k) => suD.some((x) => kind(x.stage) === k) || scl.some((x) => kind(x.stage) === k && (+x.invoice || +x.pct_claimed || +x.pct_this_month));
         window.__drawSel = window.__drawSel || {};
