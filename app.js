@@ -497,16 +497,22 @@ dash.draw('calendar', (el) => {
             cell.appendChild(oc);
           });
           items.filter(vis).forEach((r) => {
-            if (day < r.s || day > r.e) return;
+            // Swan St IGA works Saturdays, so a Saturday between its first and last program date shows even when no single item covers it.
+            let gapSat = false;
+            if (r.base === IGA && r.kind === 'program' && day.getDay() === 6) {
+              const ps = items.filter((x) => x.base === IGA && x.kind === 'program' && visK(x));
+              if (ps.length && !ps.some((x) => x.s <= day && day <= x.e) && day > Math.min(...ps.map((x) => +x.s)) && day < Math.max(...ps.map((x) => +x.e)) && r === ps.slice().sort((p, q) => p.s - q.s)[0]) gapSat = true;
+            }
+            if (!gapSat && (day < r.s || day > r.e)) return;
             const single = isoD(r.s) === isoD(r.e);
-            if (!single && !isWork(day) && isoD(day) !== isoD(r.s) && !igaSat(r, day)) return;
+            if (!gapSat && !single && !isWork(day) && isoD(day) !== isoD(r.s) && !igaSat(r, day)) return;
             // Swan St IGA follows the program only: one box a day, with the crew's faces from the roster.
             let igaCrew = [], igaLabel = null;
             if (r.base === IGA) {
               if (r.kind !== 'program') return;
-              const progs = items.filter((x) => x.base === IGA && x.kind === 'program' && x.s <= day && day <= x.e && (isoD(x.s) === isoD(x.e) || isWork(day) || igaSat(x, day)) && visK(x));
+              const progs = gapSat ? [r] : items.filter((x) => x.base === IGA && x.kind === 'program' && x.s <= day && day <= x.e && (isoD(x.s) === isoD(x.e) || isWork(day) || igaSat(x, day)) && visK(x));
               if (progs[0] !== r) return;
-              igaLabel = progs.map((x) => x.label.replace(/ \(program\)$/, '')).join(' + ');
+              igaLabel = gapSat ? 'Saturday work' : progs.map((x) => x.label.replace(/ \(program\)$/, '')).join(' + ');
               igaCrew = [...new Set(items.filter((x) => x.base === IGA && x.kind === 'roster' && x.s <= day && day <= x.e).flatMap((x) => crewOf(x)))];
             }
             if (r.manual && hostFor(r.base, day)) return;
@@ -524,7 +530,8 @@ dash.draw('calendar', (el) => {
             c.title = r.job + ': ' + shown + (extra.length ? ' (added on the planner: ' + extra.join(', ') + ')' : '');
             const chipClick = () => { ui.sel = ui.sel === r.base ? null : r.base; render(); };
             if (r.kind === 'claim') c.onclick = chipClick;
-            if (r.kind !== 'claim') {
+            if (gapSat) c.onclick = chipClick;
+            else if (r.kind !== 'claim') {
               pdrag(c, r.job, (z, e2) => {
                 const delta = Math.round((parseD(z.dataset.day) - dHere) / 86400000);
                 if (delta) { const oldS = new Date(r.s); setEdit(r, { start: isoD(addDays(r.s, delta)), end: isoD(addDays(r.e, delta)) }); if (e2.shiftKey) cascade(r, delta, oldS); render(); }
@@ -663,7 +670,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104c. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104d. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
