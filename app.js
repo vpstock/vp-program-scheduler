@@ -231,13 +231,15 @@ dash.draw('calendar', (el) => {
   };
   let cascading = '';
   const rng = (s, e) => (isoD(s) === isoD(e) ? shortD(s) : shortD(s) + ' to ' + shortD(e));
+  // Days can be changed from the Monday of the current week. Only days before that Monday are locked.
+  const lockFrom = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return addDays(d, -((d.getDay() + 6) % 7)); };
   const setEdit = (r, patch) => {
     const oS = r.s, oE = r.e, oCc = r.cc || '', oSt = r.status || '', oDel = !!r.deleted;
     let splitPast = null;
     if ((patch.start || patch.end) && !patch.deleted && !patch.status) {
-      const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
+      const tdy = lockFrom();
       const nd = (s, b) => Math.round((parseD(s) - b) / 86400000);
-      if (r.e < tdy) { toast('Days that have passed cannot be changed.'); return; }
+      if (r.e < tdy) { toast('Days before this week cannot be changed.'); return; }
       if (r.s < tdy) {
         // Only today and the days after it move. The days already gone stay where they were.
         const dS = patch.start ? nd(patch.start, r.s) : 0, dE = patch.end ? nd(patch.end, r.e) : 0;
@@ -264,7 +266,7 @@ dash.draw('calendar', (el) => {
     const who = r.job + ' · ' + r.label;
     if (r.deleted && !oDel) logAct('Deleted', r.base, 'Deleted from the planner: ' + who + ' (' + rng(oS, oE) + ').');
     else if (!r.deleted && oDel) logAct('Restored', r.base, 'Put back on the planner: ' + who + '.');
-    if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.') + (splitPast ? ' Days before today (' + rng(parseD(splitPast.start), parseD(splitPast.end)) + ') were left as they were.' : ''));
+    if (isoD(oS) !== isoD(r.s) || isoD(oE) !== isoD(r.e)) logAct(cascading ? 'Date moved with job' : 'Date changed', r.base, who + ': ' + rng(oS, oE) + ' changed to ' + rng(r.s, r.e) + (cascading ? ' (moved with ' + cascading + ').' : '.') + (splitPast ? ' Days before this week (' + rng(parseD(splitPast.start), parseD(splitPast.end)) + ') were left as they were.' : ''));
     if ((r.cc || '') !== oCc) logAct('Cost centre', r.base, who + ': ' + (r.cc ? 'set to ' + r.cc + (r.cc === 'Cut-out' ? ' (counts under fit-off)' : '') : 'cost centre cleared') + '.');
     if ((r.status || '') !== oSt) logAct('Status', r.base, who + ': ' + (r.status ? STATUS[r.status] : 'status cleared') + '.');
   };
@@ -321,9 +323,9 @@ dash.draw('calendar', (el) => {
     // Program and other boxes carry no crew of their own, so the crew comes from the roster rows for that job and day (Swan St IGA is one combined box).
     if (dDay) crewHere = [...new Set(crewHere.concat(all.filter((x) => !x.deleted && x.base === r.base && (x.kind === 'roster' || x.kind === 'fantech') && x.s <= dDay && dDay <= x.e).flatMap((x) => crewOf(x))))].filter((q) => !isEx(q, r.base, dDay));
     if (crewHere.length) {
-      const tdy = new Date(); tdy.setHours(0, 0, 0, 0);
+      const tdy = lockFrom();
       const cx = document.createElement('div'); cx.className = 'cmcrew';
-      const ct = document.createElement('small'); ct.textContent = 'Take someone off this job (today and later days only)'; cx.appendChild(ct);
+      const ct = document.createElement('small'); ct.textContent = 'Take someone off this job (this week and later days only)'; cx.appendChild(ct);
       const daysFor = (from) => { const out = []; for (let d = new Date(Math.max(+from, +tdy)); d <= r.e; d = addDays(d, 1)) if (isWork(d) || isoD(r.s) === isoD(r.e)) out.push(new Date(d)); return out; };
       const lhs = crewHere.filter((q) => /^Labour hire/.test(q));
       const groups = [];
@@ -332,7 +334,7 @@ dash.draw('calendar', (el) => {
       groups.forEach(([p, names]) => {
         const line = document.createElement('div'); line.className = 'cmcrewrow'; line.appendChild(document.createTextNode(p + ': '));
         const apply = (days, what) => {
-          const add = days.filter((d) => names.some((nm) => !isEx(nm, r.base, d))); if (!add.length) { toast('Nothing to take ' + p + ' off. Days that have passed cannot be changed.'); return; }
+          const add = days.filter((d) => names.some((nm) => !isEx(nm, r.base, d))); if (!add.length) { toast('Nothing to take ' + p + ' off. Days before this week cannot be changed.'); return; }
           add.forEach((d) => names.forEach((nm) => { if (!isEx(nm, r.base, d)) excl.push({ job: r.base, person: nm, date: isoD(d) }); })); saveEx();
           logAct('Crew removed', r.base, p + ' taken off ' + r.job + ' (' + rng(add[0], add[add.length - 1]) + ', ' + add.length + (add.length === 1 ? ' day' : ' days') + ').');
           items = all.filter((x) => !x.deleted); closeMenu(); rerender();
@@ -820,7 +822,7 @@ dash.draw('calendar', (el) => {
       lsec.appendChild(lt);
       if (actlog.length > 150) lsec.appendChild(mk('p', 'muted', 'Showing the latest 150. Download the CSV for all of them.'));
     }
-    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104y. If you do not see this line, refresh the page again.'));
+    lsec.appendChild(mk('p', 'muted', 'Planner version 20261104z. If you do not see this line, refresh the page again.'));
     body.appendChild(lsec);
 
     // Job information: a list of jobs; click one to see what we are doing on it
@@ -843,8 +845,8 @@ dash.draw('calendar', (el) => {
       b.append(mk('span', '', name), mk('small', 'muted', label));
       b.title = 'Click to see the job. Drag it onto a day on the calendar to schedule it there.'; b.style.cursor = 'grab';
       pdrag(b, name, (z) => {
-        const d = parseD(z.dataset.day), t0 = new Date(); t0.setHours(0, 0, 0, 0);
-        if (d < t0) { toast('Days that have passed cannot be changed.'); return; }
+        const d = parseD(z.dataset.day), t0 = lockFrom();
+        if (d < t0) { toast('Days before this week cannot be changed.'); return; }
         const row = { job: name, label: 'Work scheduled from the job list', start: isoD(d), end: isoD(d), kind: 'program', note: 'Dragged from the job list onto ' + shortD(d) + '. Added on the planner.' };
         if (all.some((x) => x.key === mkey(row) && !x.deleted)) { toast(name + ' is already on ' + shortD(d) + '.'); return; }
         const prev = all.find((x) => x.key === mkey(row));
